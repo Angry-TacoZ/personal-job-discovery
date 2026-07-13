@@ -9,7 +9,7 @@
     {% if latest_scan %}
       <div class="scan-card status-{{ latest_scan.status }}">
         <span>Last scan</span><strong>{{ latest_scan.status|title }}</strong>
-        <small>{{ latest_scan.started_at.strftime('%Y-%m-%d %H:%M UTC') }}</small>
+        <small>{{ latest_scan.started_at|eastern_time }}</small>
         <small>{{ latest_scan.new_jobs }} new &middot; {{ latest_scan.error_count }} errors</small>
       </div>
     {% else %}<div class="scan-card"><span>Last scan</span><strong>Not run yet</strong></div>{% endif %}
@@ -48,5 +48,5 @@
     {% else %}<div class="empty"><h3>No jobs match these filters.</h3><p>Run a scan or broaden the filters.</p></div>{% endfor %}
   </section>
 
-  <section class="panel companies"><h2>Monitored companies</h2><div class="company-grid">{% for company in companies %}<div><strong>{{ company.company_name }}</strong><span>{{ company.source_platform }} / {{ company.company_identifier }}</span><small>{% if company.last_scan_success_at %}Last success {{ company.last_scan_success_at.strftime('%Y-%m-%d %H:%M UTC') }}{% else %}No successful scan yet{% endif %}</small></div>{% endfor %}</div></section>
+  <section class="panel companies"><h2>Monitored companies</h2><div class="company-grid">{% for company in companies %}<div><strong>{{ company.company_name }}</strong><span>{{ company.source_platform }} / {{ company.company_identifier }}</span><small>{% if company.last_scan_success_at %}Last success {{ company.last_scan_success_at|eastern_time }}{% else %}No successful scan yet{% endif %}</small></div>{% endfor %}</div></section>
 {% endblock %}

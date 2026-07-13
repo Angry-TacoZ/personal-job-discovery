@@ -21,7 +21,7 @@
     <div>
       <h2>Latest scan</h2>
       {% if latest_scan %}
-        <div class="status-line"><span class="status-dot {{ latest_scan.status }}"></span><strong>{{ latest_scan.status|title }}</strong><span>{{ latest_scan.started_at.strftime('%Y-%m-%d %H:%M') }}</span></div>
+        <div class="status-line"><span class="status-dot {{ latest_scan.status }}"></span><strong>{{ latest_scan.status|title }}</strong><span>{{ latest_scan.started_at|eastern_time }}</span></div>
         <dl class="scan-summary">
           <div><dt>New</dt><dd>{{ latest_scan.new_jobs }}</dd></div>
           <div><dt>Refreshed</dt><dd>{{ latest_scan.updated_jobs }}</dd></div>

@@ -15,6 +15,7 @@ from job_discovery.gui_services import ALLOWED_INTERVALS, ConfigStore, TaskSched
 from job_discovery.repository import Repository
 from job_discovery.scan import run_scan
 from job_discovery.schemas import CompanyConfig
+from job_discovery.time_display import format_eastern_time
 
 _WEB_ROOT = Path(__file__).parent
 _LOCAL_CLIENTS = {"127.0.0.1", "::1", "localhost", "testclient"}
@@ -69,6 +70,7 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
     store = ConfigStore(resolved_config_path)
     scheduler = TaskScheduler(resolved_config_path)
     templates = Jinja2Templates(directory=str(_WEB_ROOT / "templates"))
+    templates.env.filters["eastern_time"] = format_eastern_time
 
     app = FastAPI(title="Personal Job Discovery", docs_url=None, redoc_url=None)
     app.mount("/static", StaticFiles(directory=str(_WEB_ROOT / "static")), name="static")

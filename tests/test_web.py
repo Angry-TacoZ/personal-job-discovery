@@ -99,6 +99,9 @@ scoring: {}
     assert "&lt;script&gt;" in detail.text
     assert control.status_code == 200
     assert "Job discovery at a glance" in control.text
+    assert " EDT" in dashboard.text
+    assert " EDT" in control.text
+    assert " UTC" not in dashboard.text
     assert resume_page.status_code == 200
     assert "No local resume profile configured" in resume_page.text
     assert update.status_code == 303
