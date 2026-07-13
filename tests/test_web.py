@@ -56,6 +56,11 @@ scoring: {}
     with TestClient(app) as client:
         health = client.get("/health")
         dashboard = client.get("/?minimum_score=20&new_only=true")
+        remote_with_blank_score = client.get(
+            "/?company=&title=&minimum_score=&source=&location=Remote&remote_status="
+        )
+        malformed_score = client.get("/?minimum_score=not-a-number")
+        out_of_range_score = client.get("/?minimum_score=101")
         detail = client.get(f"/jobs/{job.id}")
         control = client.get("/control")
         update = client.post(
@@ -85,6 +90,10 @@ scoring: {}
 
     assert health.json() == {"status": "ok", "jobs": 1}
     assert "Operations Analyst" in dashboard.text
+    assert remote_with_blank_score.status_code == 200
+    assert "Operations Analyst" in remote_with_blank_score.text
+    assert malformed_score.status_code == 422
+    assert out_of_range_score.status_code == 422
     assert "<script>" not in detail.text
     assert "&lt;script&gt;" in detail.text
     assert control.status_code == 200

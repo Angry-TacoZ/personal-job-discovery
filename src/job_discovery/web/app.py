@@ -42,6 +42,22 @@ def _friendly_error(exc: Exception) -> str:
     return str(exc)[:800] or type(exc).__name__
 
 
+def _parse_optional_score(value: str | None) -> int | None:
+    if value is None or not value.strip():
+        return None
+    try:
+        score = int(value)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=422, detail="Minimum score must be a whole number."
+        ) from exc
+    if not -100 <= score <= 100:
+        raise HTTPException(
+            status_code=422, detail="Minimum score must be between -100 and 100."
+        )
+    return score
+
+
 def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
     resolved_config_path = Path(config_path).expanduser().resolve()
     config, project_root = load_config(resolved_config_path)
@@ -71,16 +87,17 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
         source: str | None = None,
         location: str | None = Query(default=None, max_length=200),
         remote_status: str | None = None,
-        minimum_score: int | None = Query(default=None, ge=-100, le=100),
+        minimum_score: str | None = Query(default=None, max_length=4),
         new_only: bool = False,
     ) -> HTMLResponse:
+        parsed_minimum_score = _parse_optional_score(minimum_score)
         jobs = repository.dashboard_jobs(
             company=company,
             title=title,
             source=source,
             location=location,
             remote_status=remote_status,
-            minimum_score=minimum_score,
+            minimum_score=parsed_minimum_score,
             new_only=new_only,
         )
         return templates.TemplateResponse(
