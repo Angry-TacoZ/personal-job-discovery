@@ -8,8 +8,12 @@
   </head>
   <body>
     <header class="site-header">
-      <a href="/" class="brand">Personal Job Discovery</a>
-      <span class="local-badge">Local dashboard</span>
+      <a href="/control" class="brand">Personal Job Discovery</a>
+      <nav class="top-nav" aria-label="Primary">
+        <a href="/control">Control center</a>
+        <a href="/">Review queue</a>
+        <span class="local-badge">Local only</span>
+      </nav>
     </header>
     <main>{% block content %}{% endblock %}</main>
   </body>

@@ -57,13 +57,45 @@ scoring: {}
         health = client.get("/health")
         dashboard = client.get("/?minimum_score=20&new_only=true")
         detail = client.get(f"/jobs/{job.id}")
+        control = client.get("/control")
         update = client.post(
             f"/jobs/{job.id}/status?status=ignored", follow_redirects=False
+        )
+        rejected_origin = client.post(
+            f"/jobs/{job.id}/status?status=reviewed",
+            headers={"Origin": "https://untrusted.example"},
+        )
+        settings = client.post(
+            "/control/settings",
+            data={"threshold": "33", "timeout": "15", "retries": "1"},
+            follow_redirects=False,
+        )
+        company_add = client.post(
+            "/control/companies/save",
+            data={
+                "company_name": "Second Example",
+                "ats_platform": "lever",
+                "ats_identifier": "second-example",
+                "notes": "Added in the GUI",
+                "enabled": "on",
+                "index": "",
+            },
+            follow_redirects=False,
         )
 
     assert health.json() == {"status": "ok", "jobs": 1}
     assert "Operations Analyst" in dashboard.text
     assert "<script>" not in detail.text
     assert "&lt;script&gt;" in detail.text
+    assert control.status_code == 200
+    assert "Job discovery at a glance" in control.text
     assert update.status_code == 303
+    assert rejected_origin.status_code == 403
     assert repository.get_job(job.id).review_status == "ignored"
+    assert settings.status_code == 303
+    assert app.state.config_store.app_config().score_alert_threshold == 33
+    assert company_add.status_code == 303
+    assert [company.company_name for company in app.state.config_store.companies()] == [
+        "Example",
+        "Second Example",
+    ]

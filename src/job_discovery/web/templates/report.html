@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block title %}Latest Report · Personal Job Discovery{% endblock %}
+{% block content %}
+  {% include "_control_nav.html" %}
+  <section class="workspace-heading compact"><div><p class="eyebrow">Scan output</p><h1>Latest report</h1><p>New jobs, strong matches, and source errors from the most recent scan.</p></div><div class="workspace-actions"><a class="button secondary" href="/control/reports">Refresh</a></div></section>
+  <pre class="report-view">{{ report }}</pre>
+{% endblock %}

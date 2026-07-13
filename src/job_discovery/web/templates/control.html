@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Control Center · Personal Job Discovery{% endblock %}
+{% block content %}
+  {% include "_control_nav.html" %}
+  <section class="workspace-heading">
+    <div><p class="eyebrow">Control center</p><h1>Job discovery at a glance</h1><p>Scan public career pages, monitor source health, and open the review queue.</p></div>
+    <div class="workspace-actions">
+      <form method="post" action="/control/scan" onsubmit="this.querySelector('button').disabled=true;this.querySelector('button').textContent='Scanning…'"><button class="primary" type="submit">Scan now</button></form>
+      <a class="button secondary" href="/">Open review queue</a>
+    </div>
+  </section>
+
+  <section class="metric-row" aria-label="Queue summary">
+    <div><strong>{{ counts.active }}</strong><span>Active jobs</span></div>
+    <div><strong>{{ counts.new }}</strong><span>Needs review</span></div>
+    <div><strong>{{ counts.strong }}</strong><span>Above {{ config.score_alert_threshold }}</span></div>
+    <div><strong>{{ config.companies|selectattr('enabled')|list|length }}</strong><span>Enabled companies</span></div>
+  </section>
+
+  <section class="workspace-columns">
+    <div>
+      <h2>Latest scan</h2>
+      {% if latest_scan %}
+        <div class="status-line"><span class="status-dot {{ latest_scan.status }}"></span><strong>{{ latest_scan.status|title }}</strong><span>{{ latest_scan.started_at.strftime('%Y-%m-%d %H:%M') }}</span></div>
+        <dl class="scan-summary">
+          <div><dt>New</dt><dd>{{ latest_scan.new_jobs }}</dd></div>
+          <div><dt>Refreshed</dt><dd>{{ latest_scan.updated_jobs }}</dd></div>
+          <div><dt>Inactive</dt><dd>{{ latest_scan.inactive_jobs }}</dd></div>
+          <div><dt>Errors</dt><dd>{{ latest_scan.error_count }}</dd></div>
+        </dl>
+      {% else %}<p>No scan has run yet.</p>{% endif %}
+    </div>
+    <div>
+      <h2>Source health</h2>
+      <div class="source-list">
+        {% for company in companies %}
+          <div><span class="status-dot {% if company.last_scan_error %}failed{% else %}success{% endif %}"></span><strong>{{ company.company_name }}</strong><span>{% if company.last_scan_error %}Needs attention{% elif company.last_scan_success_at %}Healthy{% else %}Not scanned{% endif %}</span></div>
+        {% endfor %}
+      </div>
+      <a class="text-link" href="/control/companies">Manage companies →</a>
+    </div>
+  </section>
+{% endblock %}

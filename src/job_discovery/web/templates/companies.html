@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Companies · Personal Job Discovery{% endblock %}
+{% block content %}
+  {% include "_control_nav.html" %}
+  <section class="workspace-heading compact">
+    <div><p class="eyebrow">Configuration</p><h1>Monitored companies</h1><p>Add public Greenhouse, Lever, or Ashby board identifiers.</p></div>
+  </section>
+  <section class="manager-layout">
+    <div class="company-table">
+      <div class="table-head"><span>Company</span><span>ATS</span><span>Status</span><span></span></div>
+      {% for company in companies %}
+        <div class="table-row">
+          <span><strong>{{ company.company_name }}</strong><small>{{ company.ats_identifier }}</small></span>
+          <span>{{ company.ats_platform.value }}</span>
+          <span>{% if company.enabled %}Monitoring{% else %}Paused{% endif %}</span>
+          <span class="row-actions"><a href="/control/companies?edit={{ loop.index0 }}">Edit</a><form method="post" action="/control/companies/{{ loop.index0 }}/delete" onsubmit="return confirm('Remove {{ company.company_name|e }}?')"><button class="link-button danger" type="submit">Remove</button></form></span>
+        </div>
+      {% endfor %}
+    </div>
+    <form class="editor-form" method="post" action="/control/companies/save">
+      <h2>{% if selected %}Edit company{% else %}Add company{% endif %}</h2>
+      <input type="hidden" name="index" value="{% if selected_index is not none %}{{ selected_index }}{% endif %}">
+      <label>Company name<input required maxlength="200" name="company_name" value="{{ selected.company_name if selected else '' }}"></label>
+      <label>ATS platform<select name="ats_platform"><option value="greenhouse" {% if selected and selected.ats_platform.value == 'greenhouse' %}selected{% endif %}>Greenhouse</option><option value="lever" {% if selected and selected.ats_platform.value == 'lever' %}selected{% endif %}>Lever</option><option value="ashby" {% if selected and selected.ats_platform.value == 'ashby' %}selected{% endif %}>Ashby</option></select></label>
+      <label>ATS identifier<input required maxlength="100" pattern="[A-Za-z0-9_-]+" name="ats_identifier" value="{{ selected.ats_identifier if selected else '' }}"><small>The board slug from the public careers URL.</small></label>
+      <label>Notes<textarea maxlength="1000" name="notes" rows="4">{{ selected.notes if selected else '' }}</textarea></label>
+      <label class="check"><input type="checkbox" name="enabled" {% if not selected or selected.enabled %}checked{% endif %}> Monitor this company</label>
+      <div class="form-actions"><button class="primary" type="submit">Save company</button>{% if selected %}<a class="button secondary" href="/control/companies">Cancel</a>{% endif %}</div>
+    </form>
+  </section>
+{% endblock %}

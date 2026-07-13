@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Automation · Personal Job Discovery{% endblock %}
+{% block content %}
+  {% include "_control_nav.html" %}
+  <section class="workspace-heading compact"><div><p class="eyebrow">Windows automation</p><h1>Automatic scanning</h1><p>Keep SQLite on this computer and let Windows run scans in the background.</p></div></section>
+  <section class="settings-layout">
+    <div><span class="setting-label">Schedule status</span><strong class="large-status">{% if installed %}Installed{% else %}Not installed{% endif %}</strong><p>Your computer must be awake and connected to the internet when the scan runs.</p></div>
+    <form class="editor-form" method="post" action="/control/automation/install">
+      <h2>Scan frequency</h2>
+      <label>Run every<select name="interval">{% for value in intervals %}<option value="{{ value }}" {% if value == 6 %}selected{% endif %}>{{ value }} hours</option>{% endfor %}</select></label>
+      <div class="form-actions"><button class="primary" type="submit">Install schedule</button></div>
+    </form>
+  </section>
+  {% if installed %}<form method="post" action="/control/automation/remove"><button class="link-button danger" type="submit">Remove automatic scanning</button></form>{% endif %}
+{% endblock %}

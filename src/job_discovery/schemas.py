@@ -5,7 +5,7 @@ import json
 from datetime import datetime
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator
+from pydantic import BaseModel, ConfigDict, Field, HttpUrl, field_validator, model_validator
 
 
 class SourcePlatform(StrEnum):
@@ -76,6 +76,13 @@ class AppConfig(BaseModel):
     companies: list[CompanyConfig]
     scoring: ScoringConfig
 
+    @model_validator(mode="after")
+    def unique_company_sources(self) -> AppConfig:
+        keys = [(company.ats_platform, company.ats_identifier) for company in self.companies]
+        if len(keys) != len(set(keys)):
+            raise ValueError("company ATS platform and identifier combinations must be unique")
+        return self
+
 
 class NormalizedJob(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -122,4 +129,3 @@ class ScoreResult(BaseModel):
     score: int
     match_reasons: list[str]
     rejection_reasons: list[str]
-

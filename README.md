@@ -4,6 +4,20 @@ A local-first, single-user job monitor for a curated list of public company care
 
 This is not a commercial job-board crawler. It does not bypass authentication or anti-bot controls, scrape private pages, apply to jobs, send paid notifications, or use an LLM.
 
+## Use it without PowerShell
+
+On Windows, double-click **`Start Job Discovery.cmd`** in the project folder. The first launch prepares the local environment automatically, then opens the local control center in your browser. Later launches open directly without a setup window.
+
+The control center provides:
+
+- **Overview** — scan now, see queue counts, and open the review dashboard
+- **Companies** — add, edit, enable, disable, or remove monitored ATS boards
+- **Automation** — install or remove a Windows background scan schedule
+- **Settings** — change the alert threshold, timeout, and retry count
+- **Reports** — read or open the latest Markdown report
+
+Python 3.12 or newer must be installed once on the computer. No PowerShell commands are required for normal use. The interface binds only to `127.0.0.1`, so it is available on this computer rather than the public internet.
+
 ## Architecture
 
 ```text
@@ -34,9 +48,9 @@ Trust boundaries are intentionally small:
 - Review/ignore actions accept only an allow-listed state and the server binds to `127.0.0.1` by default.
 - No secrets or paid APIs are used. The application has no authentication because it is designed for localhost only; do not expose it publicly.
 
-## Windows setup
+## Manual developer setup
 
-Requirements: Git and Python 3.12 or newer. From PowerShell:
+The double-click launcher handles normal setup. These commands are only for development or troubleshooting:
 
 ```powershell
 cd C:\path\to\personal-job-discovery
@@ -119,20 +133,7 @@ Coverage includes all three normalizers, malformed provider data, duplicate/new 
 
 For one person on one Windows machine, Task Scheduler is the simplest trustworthy persistence model because `data/jobs.db` stays on the same disk.
 
-After setup, test the wrapper:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run-scan.ps1
-```
-
-Then create a task from an elevated PowerShell prompt (change the path first):
-
-```powershell
-$project = 'C:\path\to\personal-job-discovery'
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$project\scripts\run-scan.ps1`"" -WorkingDirectory $project
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(5) -RepetitionInterval (New-TimeSpan -Hours 6) -RepetitionDuration (New-TimeSpan -Days 3650)
-Register-ScheduledTask -TaskName 'Personal Job Discovery Scan' -Action $action -Trigger $trigger -Description 'Scan configured public ATS job boards every six hours'
-```
+Open **Automation** in the desktop app, choose a 3-, 6-, 12-, or 24-hour interval, and select **Install schedule**. The same screen can remove the task later. The task runs with normal user privileges and does not expose the dashboard publicly.
 
 ### GitHub Actions
 
@@ -158,7 +159,7 @@ Important limitation: GitHub-hosted runners are ephemeral. Actions cache is best
 - A listing that changes external ID is treated as new.
 - Disappearance after a successful empty response marks prior jobs inactive; malformed-all responses are treated as failures to reduce false deactivation.
 - There is no migration framework yet; schema changes during early development may require deleting the local database.
-- The dashboard is local-only and has no authentication or CSRF protection. Do not bind it to a public interface.
+- The interface is local-only, rejects nonlocal clients and cross-origin writes, and has no user accounts. Do not bind it to a public interface.
 - GitHub Actions cache does not provide durable SQLite persistence.
 - Workday, email, Slack, Discord, and webhook alerts are intentionally out of scope.
 
@@ -173,9 +174,12 @@ src/job_discovery/
   scoring.py             Deterministic explainable rules
   scan.py                Fault-isolated orchestration
   reports.py             Markdown and JSON alert output
+  gui.py                 Double-click launcher for the local browser GUI
+  gui_services.py        Safe configuration and Task Scheduler boundaries
   web/                    FastAPI routes, escaped templates, and CSS
 tests/fixtures/           Saved ATS responses (no live network in tests)
 .github/workflows/        Optional scheduled scanner
+Start Job Discovery.cmd  Double-click GUI launcher and first-run setup entry
 ```
 
 ## Best next feature

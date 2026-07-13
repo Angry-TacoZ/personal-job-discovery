@@ -250,6 +250,21 @@ class Repository:
         with self.session_factory() as session:
             return session.scalar(select(func.count()).select_from(JobRecord)) or 0
 
+    def summary_counts(self, score_threshold: int) -> dict[str, int]:
+        with self.session_factory() as session:
+            active = JobRecord.active.is_(True)
+
+            def count(*conditions: object) -> int:
+                query = select(func.count()).select_from(JobRecord).where(active, *conditions)
+                return session.scalar(query) or 0
+
+            return {
+                "active": count(),
+                "new": count(JobRecord.review_status == "new"),
+                "strong": count(JobRecord.match_score >= score_threshold),
+                "ignored": count(JobRecord.review_status == "ignored"),
+            }
+
     @staticmethod
     def _company(session: Session, company: CompanyConfig) -> CompanyRecord | None:
         return session.scalar(
