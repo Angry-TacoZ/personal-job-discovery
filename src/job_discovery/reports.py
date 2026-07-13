@@ -19,8 +19,15 @@ def _job_data(job: JobRecord, run_id: int) -> dict[str, Any]:
         "remote_status": job.remote_status,
         "source": job.source_platform,
         "score": job.match_score,
+        "preference_score": job.preference_score,
+        "resume_score": job.resume_score,
+        "screening_score": job.screening_score,
         "match_reasons": job.match_reasons,
         "rejection_reasons": job.rejection_reasons,
+        "resume_reasons": job.resume_reasons,
+        "resume_gaps": job.resume_gaps,
+        "screening_reasons": job.screening_reasons,
+        "screening_flags": job.screening_flags,
         "apply_url": job.apply_url,
         "source_url": job.source_url,
     }
@@ -91,12 +98,18 @@ def _markdown_jobs(jobs: list[dict[str, Any]]) -> list[str]:
                 "",
                 f"- Location: {job['location']}",
                 f"- Score: {job['score']}",
+                f"- Preference: {job['preference_score']}",
+                f"- Resume evidence: {job['resume_score']}",
+                f"- Screening readiness: {job['screening_score']}",
                 f"- Source: {job['source']}",
                 f"- Match reasons: {'; '.join(job['match_reasons']) or 'None'}",
                 f"- Rejection reasons: {'; '.join(job['rejection_reasons']) or 'None'}",
+                f"- Resume evidence: {'; '.join(job['resume_reasons']) or 'None'}",
+                f"- Resume gaps: {'; '.join(job['resume_gaps']) or 'None'}",
+                f"- Screening notes: {'; '.join(job['screening_reasons']) or 'None'}",
+                f"- Screening flags: {'; '.join(job['screening_flags']) or 'None'}",
                 f"- [Apply]({job['apply_url']})",
                 "",
             ]
         )
     return lines
-

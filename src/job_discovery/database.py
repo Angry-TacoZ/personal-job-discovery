@@ -15,6 +15,8 @@ from sqlalchemy import (
     UniqueConstraint,
     create_engine,
     event,
+    inspect,
+    text,
 )
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, sessionmaker
@@ -60,6 +62,13 @@ class CompanyRecord(Base):
     last_scan_warnings: Mapped[list] = mapped_column(JSON, default=list)
 
 
+class AppState(Base):
+    __tablename__ = "app_state"
+
+    key: Mapped[str] = mapped_column(String(100), primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
+
+
 class JobRecord(Base):
     __tablename__ = "jobs"
     __table_args__ = (
@@ -93,6 +102,13 @@ class JobRecord(Base):
     match_score: Mapped[int] = mapped_column(Integer, default=0, index=True)
     match_reasons: Mapped[list] = mapped_column(JSON, default=list)
     rejection_reasons: Mapped[list] = mapped_column(JSON, default=list)
+    preference_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    resume_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    screening_score: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    resume_reasons: Mapped[list] = mapped_column(JSON, default=list)
+    resume_gaps: Mapped[list] = mapped_column(JSON, default=list)
+    screening_reasons: Mapped[list] = mapped_column(JSON, default=list)
+    screening_flags: Mapped[list] = mapped_column(JSON, default=list)
     review_status: Mapped[str] = mapped_column(String(20), default="new", index=True)
     discovered_in_run_id: Mapped[int | None] = mapped_column(
         ForeignKey("scan_runs.id"), nullable=True
@@ -113,9 +129,26 @@ def create_session_factory(database_path: Path) -> sessionmaker:
         cursor.close()
 
     Base.metadata.create_all(engine)
+    _migrate_jobs_score_breakdown(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
 
 
 def database_engine(factory: sessionmaker) -> Engine:
     return factory.kw["bind"]
 
+
+def _migrate_jobs_score_breakdown(engine: Engine) -> None:
+    existing = {column["name"] for column in inspect(engine).get_columns("jobs")}
+    additions = {
+        "preference_score": "INTEGER",
+        "resume_score": "INTEGER",
+        "screening_score": "INTEGER",
+        "resume_reasons": "JSON NOT NULL DEFAULT '[]'",
+        "resume_gaps": "JSON NOT NULL DEFAULT '[]'",
+        "screening_reasons": "JSON NOT NULL DEFAULT '[]'",
+        "screening_flags": "JSON NOT NULL DEFAULT '[]'",
+    }
+    with engine.begin() as connection:
+        for name, declaration in additions.items():
+            if name not in existing:
+                connection.execute(text(f"ALTER TABLE jobs ADD COLUMN {name} {declaration}"))

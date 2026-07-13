@@ -8,7 +8,7 @@ import httpx
 
 from job_discovery.adapters import ADAPTERS
 from job_discovery.adapters.base import BaseAdapter
-from job_discovery.config import resolve_project_path
+from job_discovery.config import load_resume_profile, resolve_project_path
 from job_discovery.reports import write_reports
 from job_discovery.repository import Repository
 from job_discovery.schemas import AppConfig
@@ -31,6 +31,8 @@ async def run_scan(
     errors: list[dict[str, str]] = []
     warnings: dict[str, list[str]] = {}
     totals = {"succeeded": 0, "new": 0, "updated": 0, "inactive": 0}
+    resume_profile = load_resume_profile(config, project_root)
+    repository.ensure_scores(config.scoring, resume_profile)
 
     timeout = httpx.Timeout(config.request_timeout_seconds)
     limits = httpx.Limits(max_connections=4, max_keepalive_connections=2)
@@ -44,7 +46,10 @@ async def run_scan(
                     raise RuntimeError(
                         "all returned listings were malformed; preserving prior state"
                     )
-                scored = [(job, score_job(job, config.scoring)) for job in result.jobs]
+                scored = [
+                    (job, score_job(job, config.scoring, resume_profile))
+                    for job in result.jobs
+                ]
                 new, updated, inactive = repository.upsert_source_jobs(
                     company, run_id, scored, result.warnings
                 )

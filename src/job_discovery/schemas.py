@@ -64,6 +64,40 @@ class ScoringConfig(BaseModel):
     negative_rules: list[ScoreRule] = Field(default_factory=list)
 
 
+class ResumeProfile(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    profile_label: str = Field(default="Local resume profile", min_length=1, max_length=200)
+    years_experience: int = Field(ge=0, le=60)
+    education_level: str = Field(pattern=r"^(high_school|associate|bachelor|master|doctorate)$")
+    active_clearance: bool = False
+    work_authorization: str = Field(
+        default="unknown", pattern=r"^(unknown|authorized|requires_sponsorship)$"
+    )
+    locations: list[str] = Field(default_factory=list)
+    excluded_locations: list[str] = Field(default_factory=list)
+    evidence_rules: list[ScoreRule] = Field(min_length=1)
+    gap_rules: list[ScoreRule] = Field(default_factory=list)
+
+    @field_validator("profile_label")
+    @classmethod
+    def strip_profile_label(cls, value: str) -> str:
+        return value.strip()
+
+    @field_validator("locations", "excluded_locations")
+    @classmethod
+    def normalize_locations(cls, values: list[str]) -> list[str]:
+        return [value.strip().casefold() for value in values if value.strip()]
+
+    @model_validator(mode="after")
+    def positive_evidence_weights(self) -> ResumeProfile:
+        if any(rule.weight < 0 for rule in self.evidence_rules):
+            raise ValueError("resume evidence weights cannot be negative")
+        if any(rule.weight > 0 for rule in self.gap_rules):
+            raise ValueError("resume gap weights cannot be positive")
+        return self
+
+
 class AppConfig(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -73,6 +107,7 @@ class AppConfig(BaseModel):
     request_timeout_seconds: float = Field(default=20, ge=1, le=60)
     request_retries: int = Field(default=2, ge=0, le=5)
     score_alert_threshold: int = Field(default=20, ge=-100, le=100)
+    resume_profile_path: str | None = Field(default=None, max_length=500)
     companies: list[CompanyConfig]
     scoring: ScoringConfig
 
@@ -129,3 +164,10 @@ class ScoreResult(BaseModel):
     score: int
     match_reasons: list[str]
     rejection_reasons: list[str]
+    preference_score: int | None = None
+    resume_score: int | None = None
+    screening_score: int | None = None
+    resume_reasons: list[str] = Field(default_factory=list)
+    resume_gaps: list[str] = Field(default_factory=list)
+    screening_reasons: list[str] = Field(default_factory=list)
+    screening_flags: list[str] = Field(default_factory=list)

@@ -1,6 +1,7 @@
 <nav class="control-nav" aria-label="Control center">
   <a href="/control" {% if request.url.path == '/control' %}aria-current="page"{% endif %}>Overview</a>
   <a href="/control/companies" {% if request.url.path.startswith('/control/companies') %}aria-current="page"{% endif %}>Companies</a>
+  <a href="/control/resume" {% if request.url.path.startswith('/control/resume') %}aria-current="page"{% endif %}>Resume scoring</a>
   <a href="/control/automation" {% if request.url.path.startswith('/control/automation') %}aria-current="page"{% endif %}>Automation</a>
   <a href="/control/settings" {% if request.url.path.startswith('/control/settings') %}aria-current="page"{% endif %}>Settings</a>
   <a href="/control/reports" {% if request.url.path.startswith('/control/reports') %}aria-current="page"{% endif %}>Reports</a>

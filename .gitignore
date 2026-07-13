@@ -6,10 +6,10 @@ __pycache__/
 .coverage
 htmlcov/
 .env
+config/resume-profile.local.yml
 data/*.db
 data/*.db-*
 reports/*.json
 reports/*.md
 !data/.gitkeep
 !reports/.gitkeep
-

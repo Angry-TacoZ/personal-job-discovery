@@ -63,6 +63,7 @@ scoring: {}
         out_of_range_score = client.get("/?minimum_score=101")
         detail = client.get(f"/jobs/{job.id}")
         control = client.get("/control")
+        resume_page = client.get("/control/resume")
         update = client.post(
             f"/jobs/{job.id}/status?status=ignored", follow_redirects=False
         )
@@ -98,6 +99,8 @@ scoring: {}
     assert "&lt;script&gt;" in detail.text
     assert control.status_code == 200
     assert "Job discovery at a glance" in control.text
+    assert resume_page.status_code == 200
+    assert "No local resume profile configured" in resume_page.text
     assert update.status_code == 303
     assert rejected_origin.status_code == 403
     assert repository.get_job(job.id).review_status == "ignored"

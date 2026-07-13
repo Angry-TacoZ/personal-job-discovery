@@ -9,7 +9,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from job_discovery.config import load_config, resolve_project_path
+from job_discovery.config import load_config, load_resume_profile, resolve_project_path
 from job_discovery.database import create_session_factory
 from job_discovery.gui_services import ALLOWED_INTERVALS, ConfigStore, TaskScheduler
 from job_discovery.repository import Repository
@@ -64,6 +64,8 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
     database_path = resolve_project_path(project_root, config.database_path)
     repository = Repository(create_session_factory(database_path))
     repository.sync_companies(config.companies)
+    resume_profile = load_resume_profile(config, project_root)
+    repository.ensure_scores(config.scoring, resume_profile)
     store = ConfigStore(resolved_config_path)
     scheduler = TaskScheduler(resolved_config_path)
     templates = Jinja2Templates(directory=str(_WEB_ROOT / "templates"))
@@ -74,6 +76,7 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
     app.state.config_store = store
     app.state.scheduler = scheduler
     app.state.scan_lock = asyncio.Lock()
+    app.state.resume_profile = resume_profile
 
     @app.get("/health")
     def health() -> dict[str, object]:
@@ -91,6 +94,7 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
         new_only: bool = False,
     ) -> HTMLResponse:
         parsed_minimum_score = _parse_optional_score(minimum_score)
+        current = store.app_config()
         jobs = repository.dashboard_jobs(
             company=company,
             title=title,
@@ -109,6 +113,7 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
                 "latest_scan": repository.latest_scan(),
                 "options": repository.filter_options(),
                 "filters": request.query_params,
+                "score_threshold": current.score_alert_threshold,
             },
         )
 
@@ -258,6 +263,35 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
             return _redirect("/control/automation", "Automatic scanning removed.")
         except Exception as exc:
             return _redirect("/control/automation", _friendly_error(exc), error=True)
+
+    @app.get("/control/resume", response_class=HTMLResponse)
+    def resume_profile_page(
+        request: Request, message: str | None = None, error: str | None = None
+    ) -> HTMLResponse:
+        current, root = load_config(resolved_config_path)
+        profile = load_resume_profile(current, root)
+        return templates.TemplateResponse(
+            request,
+            "resume.html",
+            {
+                "profile": profile,
+                "formula": "25% preference + 50% resume evidence + 25% screening readiness",
+                "message": message,
+                "error": error,
+            },
+        )
+
+    @app.post("/control/resume/rescore")
+    def rescore_resume(request: Request) -> RedirectResponse:
+        _require_local_write(request)
+        try:
+            current, root = load_config(resolved_config_path)
+            profile = load_resume_profile(current, root)
+            count = repository.rescore_jobs(current.scoring, profile)
+            app.state.resume_profile = profile
+            return _redirect("/control/resume", f"Rescored {count} active jobs.")
+        except Exception as exc:
+            return _redirect("/control/resume", _friendly_error(exc), error=True)
 
     @app.get("/control/settings", response_class=HTMLResponse)
     def settings(

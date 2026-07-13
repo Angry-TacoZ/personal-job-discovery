@@ -4,7 +4,8 @@ reports_dir: reports
 user_agent: PersonalJobDiscovery/0.1 (+local personal-use monitor)
 request_timeout_seconds: 20
 request_retries: 2
-score_alert_threshold: 20
+score_alert_threshold: 65
+resume_profile_path: config/resume-profile.local.yml
 
 companies:
   - company_name: GitLab

@@ -1,12 +1,21 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from datetime import UTC, datetime
 
 from sqlalchemy import Select, desc, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
-from job_discovery.database import CompanyRecord, JobRecord, ScanRun
-from job_discovery.schemas import CompanyConfig, NormalizedJob, ScoreResult
+from job_discovery.database import AppState, CompanyRecord, JobRecord, ScanRun
+from job_discovery.schemas import (
+    CompanyConfig,
+    NormalizedJob,
+    ResumeProfile,
+    ScoreResult,
+    ScoringConfig,
+)
+from job_discovery.scoring import SCORING_VERSION, score_job
 
 
 def utc_now() -> datetime:
@@ -99,9 +108,6 @@ class Repository:
                         last_seen_at=now,
                         active=True,
                         content_hash=content_hash,
-                        match_score=score.score,
-                        match_reasons=score.match_reasons,
-                        rejection_reasons=score.rejection_reasons,
                     )
                     session.add(record)
                     new_count += 1
@@ -121,9 +127,7 @@ class Repository:
                 record.last_seen_at = now
                 record.active = True
                 record.content_hash = content_hash
-                record.match_score = score.score
-                record.match_reasons = score.match_reasons
-                record.rejection_reasons = score.rejection_reasons
+                self._apply_score(record, score)
 
             active_query = select(JobRecord).where(
                 JobRecord.source_platform == company.ats_platform.value,
@@ -250,6 +254,32 @@ class Repository:
         with self.session_factory() as session:
             return session.scalar(select(func.count()).select_from(JobRecord)) or 0
 
+    def rescore_jobs(
+        self, scoring: ScoringConfig, resume_profile: ResumeProfile | None
+    ) -> int:
+        count = 0
+        with self.session_factory.begin() as session:
+            for record in session.scalars(select(JobRecord).where(JobRecord.active.is_(True))):
+                self._apply_score(record, score_job(record, scoring, resume_profile))
+                count += 1
+            signature = self._scoring_signature(scoring, resume_profile)
+            state = session.get(AppState, "scoring_signature")
+            if state is None:
+                session.add(AppState(key="scoring_signature", value=signature))
+            else:
+                state.value = signature
+        return count
+
+    def ensure_scores(
+        self, scoring: ScoringConfig, resume_profile: ResumeProfile | None
+    ) -> int:
+        signature = self._scoring_signature(scoring, resume_profile)
+        with self.session_factory() as session:
+            state = session.get(AppState, "scoring_signature")
+            if state is not None and state.value == signature:
+                return 0
+        return self.rescore_jobs(scoring, resume_profile)
+
     def summary_counts(self, score_threshold: int) -> dict[str, int]:
         with self.session_factory() as session:
             active = JobRecord.active.is_(True)
@@ -273,3 +303,30 @@ class Repository:
                 CompanyRecord.company_identifier == company.ats_identifier,
             )
         )
+
+    @staticmethod
+    def _apply_score(record: JobRecord, score: ScoreResult) -> None:
+        record.match_score = score.score
+        record.preference_score = score.preference_score
+        record.resume_score = score.resume_score
+        record.screening_score = score.screening_score
+        record.match_reasons = score.match_reasons
+        record.rejection_reasons = score.rejection_reasons
+        record.resume_reasons = score.resume_reasons
+        record.resume_gaps = score.resume_gaps
+        record.screening_reasons = score.screening_reasons
+        record.screening_flags = score.screening_flags
+
+    @staticmethod
+    def _scoring_signature(
+        scoring: ScoringConfig, resume_profile: ResumeProfile | None
+    ) -> str:
+        payload = {
+            "version": SCORING_VERSION,
+            "scoring": scoring.model_dump(mode="json"),
+            "resume_profile": (
+                resume_profile.model_dump(mode="json") if resume_profile else None
+            ),
+        }
+        canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(canonical.encode("utf-8")).hexdigest()

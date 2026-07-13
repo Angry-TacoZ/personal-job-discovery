@@ -4,7 +4,7 @@ from pathlib import Path
 
 import yaml
 
-from job_discovery.schemas import AppConfig
+from job_discovery.schemas import AppConfig, ResumeProfile
 
 
 def load_config(path: str | Path) -> tuple[AppConfig, Path]:
@@ -29,3 +29,18 @@ def _find_project_root(config_path: Path) -> Path:
 def resolve_project_path(project_root: Path, configured_path: str) -> Path:
     path = Path(configured_path).expanduser()
     return path.resolve() if path.is_absolute() else (project_root / path).resolve()
+
+
+def load_resume_profile(config: AppConfig, project_root: Path) -> ResumeProfile | None:
+    if not config.resume_profile_path:
+        return None
+    profile_path = resolve_project_path(project_root, config.resume_profile_path)
+    if not profile_path.is_relative_to(project_root):
+        raise ValueError("resume profile must stay inside the project directory")
+    if not profile_path.is_file():
+        return None
+    with profile_path.open(encoding="utf-8") as handle:
+        raw = yaml.safe_load(handle)
+    if not isinstance(raw, dict):
+        raise ValueError("resume profile root must be an object")
+    return ResumeProfile.model_validate(raw)

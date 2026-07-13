@@ -12,6 +12,7 @@ The control center provides:
 
 - **Overview** — scan now, see queue counts, and open the review dashboard
 - **Companies** — add, edit, enable, disable, or remove monitored ATS boards
+- **Resume scoring** — inspect the sanitized evidence profile and rescore saved jobs
 - **Automation** — install or remove a Windows background scan schedule
 - **Settings** — change the alert threshold, timeout, and retry count
 - **Reports** — read or open the latest Markdown report
@@ -112,9 +113,19 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000). The dashboard provides new 
 
 ## Scoring
 
-Scoring rules live entirely in `config/companies.yml`; application code contains no role-specific weights. A rule contributes its weight once when any configured phrase appears in one of its selected fields. Results are clamped to the configured minimum and maximum.
+The overall 0-100 score combines three visible components:
 
-Positive and negative explanations are stored with every job so a score remains auditable. Phrase matching is deliberately simple and case-insensitive. It does not infer synonyms, years of experience, or whether a requirement is optional. Review rules after real scans and add precise phrases rather than broad words that create false positives.
+- **25% preference fit** from the positive and negative rules in `config/companies.yml`
+- **50% resume evidence** from documented capabilities in the ignored local resume profile
+- **25% screening readiness** from visible experience, education, location, clearance, seniority, and sponsorship language
+
+A rule contributes its weight once when any configured phrase appears in one of its selected fields. Every component and matched phrase is stored with the job so the result remains auditable. Explicit likely blockers cap the overall score at 49 rather than being hidden inside an otherwise strong match.
+
+`config/resume-profile.local.yml` is intentionally excluded from Git. It contains a sanitized evidence profile without the source PDF, phone number, or email. The raw resume remains outside the project. The configured profile path is restricted to the project directory to prevent the server from reading arbitrary files.
+
+If the ignored profile is absent, such as on a GitHub-hosted runner, the scanner safely falls back to preference-only scoring instead of reading another file or failing the scan.
+
+Phrase matching is deliberately literal and case-insensitive. Screening readiness is an estimate based only on visible posting language, not the employer's private ATS configuration. Degree equivalency, work authorization, and ambiguous requirements remain warnings for human review rather than invented facts.
 
 ## Tests and lint
 
@@ -125,7 +136,7 @@ Tests use saved provider fixtures and make no live network requests:
 .\.venv\Scripts\python.exe -m pytest
 ```
 
-Coverage includes all three normalizers, malformed provider data, duplicate/new detection, inactive handling, deterministic positive/negative explanations, and preservation of active jobs during source failures.
+Coverage includes all three normalizers, malformed provider data, duplicate/new detection, inactive handling, deterministic component scores, screening blockers, local-profile containment, database migration, and preservation of active jobs during source failures.
 
 ## Automatic scanning
 
@@ -158,7 +169,7 @@ Important limitation: GitHub-hosted runners are ephemeral. Actions cache is best
 - Greenhouse's public feed often exposes an update timestamp rather than the original publication date.
 - A listing that changes external ID is treated as new.
 - Disappearance after a successful empty response marks prior jobs inactive; malformed-all responses are treated as failures to reduce false deactivation.
-- There is no migration framework yet; schema changes during early development may require deleting the local database.
+- The built-in migration currently covers the resume-score columns; broader future schema changes may need a formal migration framework.
 - The interface is local-only, rejects nonlocal clients and cross-origin writes, and has no user accounts. Do not bind it to a public interface.
 - GitHub Actions cache does not provide durable SQLite persistence.
 - Workday, email, Slack, Discord, and webhook alerts are intentionally out of scope.
@@ -166,7 +177,7 @@ Important limitation: GitHub-hosted runners are ephemeral. Actions cache is best
 ## Project layout
 
 ```text
-config/                  Human-editable companies and scoring weights
+config/                  Companies, preference weights, and ignored local resume profile
 src/job_discovery/
   adapters/              Shared adapter interface and three ATS implementations
   database.py            SQLAlchemy models and SQLite setup
