@@ -41,8 +41,16 @@ def main(argv: list[str] | None = None) -> int:
     if dashboard_is_ready():
         _open_control_center()
         return 0
-    threading.Timer(0.8, _open_control_center).start()
-    uvicorn.run(create_app(config_path), host="127.0.0.1", port=8000, log_level="warning")
+    opener = threading.Timer(0.8, _open_control_center)
+    opener.daemon = True
+    opener.start()
+    uvicorn.run(
+        create_app(config_path),
+        host="127.0.0.1",
+        port=8000,
+        log_config=None,
+        access_log=False,
+    )
     return 0
 
 
