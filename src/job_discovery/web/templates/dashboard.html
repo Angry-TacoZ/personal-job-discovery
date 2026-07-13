@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+  <section class="hero">
+    <div>
+      <p class="eyebrow">Review queue</p>
+      <h1>Jobs worth a closer look</h1>
+      <p class="lede">Deterministic matches from your curated public career pages.</p>
+    </div>
+    {% if latest_scan %}
+      <div class="scan-card status-{{ latest_scan.status }}">
+        <span>Last scan</span>
+        <strong>{{ latest_scan.status|title }}</strong>
+        <small>{{ latest_scan.started_at.strftime('%Y-%m-%d %H:%M UTC') }}</small>
+        <small>{{ latest_scan.new_jobs }} new · {{ latest_scan.error_count }} errors</small>
+      </div>
+    {% else %}
+      <div class="scan-card"><span>Last scan</span><strong>Not run yet</strong></div>
+    {% endif %}
+  </section>
+
+  <section class="panel">
+    <form method="get" class="filters">
+      <label>Company
+        <select name="company"><option value="">All</option>
+          {% for item in options.companies %}<option {% if filters.get('company') == item %}selected{% endif %}>{{ item }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Title
+        <input name="title" value="{{ filters.get('title', '') }}" placeholder="analyst, AI, operations">
+      </label>
+      <label>Minimum score
+        <input name="minimum_score" type="number" min="-100" max="100" value="{{ filters.get('minimum_score', '') }}">
+      </label>
+      <label>Source
+        <select name="source"><option value="">All</option>
+          {% for item in options.sources %}<option {% if filters.get('source') == item %}selected{% endif %}>{{ item }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Location
+        <input name="location" value="{{ filters.get('location', '') }}" placeholder="Remote or Pennsylvania">
+      </label>
+      <label>Remote status
+        <select name="remote_status"><option value="">All</option>
+          {% for item in options.remote_statuses %}<option {% if filters.get('remote_status') == item %}selected{% endif %}>{{ item }}</option>{% endfor %}
+        </select>
+      </label>
+      <label class="check"><input name="new_only" type="checkbox" value="true" {% if filters.get('new_only') %}checked{% endif %}> New only</label>
+      <div class="filter-actions"><button type="submit">Apply filters</button><a href="/">Clear</a></div>
+    </form>
+  </section>
+
+  {% set errors = companies|selectattr('last_scan_error')|list %}
+  {% if errors %}
+    <section class="panel errors">
+      <h2>Source errors</h2>
+      {% for company in errors %}<p><strong>{{ company.company_name }}</strong>: {{ company.last_scan_error }}</p>{% endfor %}
+    </section>
+  {% endif %}
+
+  <section class="queue-heading"><h2>Active jobs</h2><span>{{ jobs|length }} shown</span></section>
+  <section class="job-list">
+    {% for job in jobs %}
+      <article class="job-card">
+        <div class="score {% if job.match_score >= 20 %}strong{% elif job.match_score < 0 %}weak{% endif %}">{{ job.match_score }}</div>
+        <div class="job-main">
+          <div class="meta"><span>{{ job.company_name }}</span><span>{{ job.source_platform }}</span><span>{{ job.remote_status }}</span><span class="review-{{ job.review_status }}">{{ job.review_status }}</span></div>
+          <h3><a href="/jobs/{{ job.id }}">{{ job.title }}</a></h3>
+          <p>{{ job.location }}{% if job.department %} · {{ job.department }}{% endif %}</p>
+          {% if job.match_reasons %}<p class="reason">{{ job.match_reasons[0] }}</p>{% endif %}
+        </div>
+        <a class="apply-link" href="{{ job.apply_url }}" rel="noopener noreferrer" target="_blank">Apply ↗</a>
+      </article>
+    {% else %}
+      <div class="empty"><h3>No jobs match these filters.</h3><p>Run a scan or broaden the filters.</p></div>
+    {% endfor %}
+  </section>
+
+  <section class="panel companies">
+    <h2>Monitored companies</h2>
+    <div class="company-grid">
+      {% for company in companies %}
+        <div><strong>{{ company.company_name }}</strong><span>{{ company.source_platform }} / {{ company.company_identifier }}</span><small>{% if company.last_scan_success_at %}Last success {{ company.last_scan_success_at.strftime('%Y-%m-%d %H:%M UTC') }}{% else %}No successful scan yet{% endif %}</small></div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
+

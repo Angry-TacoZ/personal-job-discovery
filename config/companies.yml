@@ -1,0 +1,94 @@
+# Replace these documented examples with your own target companies.
+database_path: data/jobs.db
+reports_dir: reports
+user_agent: PersonalJobDiscovery/0.1 (+local personal-use monitor)
+request_timeout_seconds: 20
+request_retries: 2
+score_alert_threshold: 20
+
+companies:
+  - company_name: GitLab
+    ats_platform: greenhouse
+    ats_identifier: gitlab
+    enabled: true
+    notes: Replaceable Greenhouse example.
+  - company_name: Palantir
+    ats_platform: lever
+    ats_identifier: palantir
+    enabled: true
+    notes: Replaceable Lever example.
+  - company_name: Notion
+    ats_platform: ashby
+    ats_identifier: notion
+    enabled: true
+    notes: Replaceable Ashby example.
+
+scoring:
+  minimum_score: -100
+  maximum_score: 100
+  positive_rules:
+    - reason: Preferred AI operations and quality role
+      phrases: [ai operations, ai enablement, ai evaluation, ai quality assurance, prompt engineer, responsible ai]
+      weight: 22
+      fields: [title, description, department]
+    - reason: Preferred operations and systems role
+      phrases: [product operations, business analyst, systems analyst, knowledge management, technical program coordinator, program coordinator]
+      weight: 18
+      fields: [title, description, department]
+    - reason: Preferred junior engineering role
+      phrases: [junior software engineer, entry level software engineer, associate software engineer]
+      weight: 18
+      fields: [title, description]
+    - reason: Healthcare technology alignment
+      phrases: [healthcare technology, healthcare operations, health tech, clinical operations]
+      weight: 12
+      fields: [title, description, department]
+    - reason: Preferred location or remote arrangement
+      phrases: [remote, united states, pennsylvania]
+      weight: 10
+      fields: [location, title]
+    - reason: Internal operations and process work
+      phrases: [internal operations, internal tools, process improvement, workflow design, workflow automation, ai adoption]
+      weight: 10
+      fields: [title, description, department]
+    - reason: Evaluation and evidence work
+      phrases: [troubleshooting, research, evaluation, testing, documentation, analytics, source grounding, governance]
+      weight: 8
+      fields: [title, description]
+    - reason: Relevant technical tools
+      phrases: [python, javascript, react, firebase, microsoft 365, servicenow, sql, power bi]
+      weight: 6
+      fields: [title, description]
+  negative_rules:
+    - reason: High-volume phone or outbound sales work
+      phrases: [call center, continuous phone queue, cold calling, sales quota]
+      weight: -30
+      fields: [title, description]
+    - reason: Physical or field-work mismatch
+      phrases: [warehouse, field technician, standing for long periods, heavy lifting]
+      weight: -30
+      fields: [title, description]
+    - reason: Travel-heavy role
+      phrases: [extensive travel, travel up to 75%, travel up to 100%]
+      weight: -20
+      fields: [description]
+    - reason: Commission-only compensation
+      phrases: [commission only, commission-only]
+      weight: -35
+      fields: [description]
+    - reason: Senior-level title mismatch
+      phrases: [senior, staff, principal]
+      weight: -35
+      fields: [title]
+    - reason: Extensive formal experience requirement
+      phrases: [7+ years, 8+ years, 9+ years, 10+ years, at least 7 years, minimum of 7 years]
+      weight: -40
+      fields: [description]
+    - reason: Mandatory advanced degree
+      phrases: [phd required, master's degree required, advanced degree required]
+      weight: -22
+      fields: [description]
+    - reason: Active clearance requirement
+      phrases: [active security clearance, active secret clearance, active top secret]
+      weight: -35
+      fields: [title, description]

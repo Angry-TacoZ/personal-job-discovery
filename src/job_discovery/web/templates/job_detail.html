@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} · Personal Job Discovery{% endblock %}
+{% block content %}
+  <p class="back"><a href="/">← Back to queue</a></p>
+  <article class="detail">
+    <div class="detail-heading">
+      <div><p class="eyebrow">{{ job.company_name }} · {{ job.source_platform }}</p><h1>{{ job.title }}</h1><p>{{ job.location }} · {{ job.remote_status }}{% if job.employment_type %} · {{ job.employment_type }}{% endif %}</p></div>
+      <div class="detail-score"><span>Match score</span><strong>{{ job.match_score }}</strong></div>
+    </div>
+    <div class="actions">
+      <a class="primary" href="{{ job.apply_url }}" rel="noopener noreferrer" target="_blank">Open application ↗</a>
+      <form method="post" action="/jobs/{{ job.id }}/status?status=reviewed"><button>Mark reviewed</button></form>
+      <form method="post" action="/jobs/{{ job.id }}/status?status=ignored"><button class="muted">Ignore</button></form>
+    </div>
+    <div class="reason-grid">
+      <section><h2>Match reasons</h2>{% for reason in job.match_reasons %}<p class="reason positive">{{ reason }}</p>{% else %}<p>No positive rules matched.</p>{% endfor %}</section>
+      <section><h2>Rejection reasons</h2>{% for reason in job.rejection_reasons %}<p class="reason negative">{{ reason }}</p>{% else %}<p>No negative rules matched.</p>{% endfor %}</section>
+    </div>
+    <section><h2>Description</h2><div class="description">{{ job.description }}</div></section>
+    <footer><a href="{{ job.source_url }}" rel="noopener noreferrer" target="_blank">View original listing ↗</a></footer>
+  </article>
+{% endblock %}
+

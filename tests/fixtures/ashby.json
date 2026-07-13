@@ -1,0 +1,18 @@
+{
+  "jobs": [
+    {
+      "id": "ashby-301",
+      "title": "AI Evaluation Coordinator",
+      "location": "United States",
+      "employmentType": "FullTime",
+      "department": "Responsible AI",
+      "descriptionPlain": "Evaluation, source grounding, governance, and analytics.",
+      "jobUrl": "https://example.com/ashby/301",
+      "applyUrl": "https://example.com/ashby/301/apply",
+      "publishedAt": "2026-07-09T15:30:00Z",
+      "isRemote": true
+    },
+    {"id": "ashby-bad", "title": "Missing URLs"}
+  ]
+}
+

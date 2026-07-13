@@ -1,0 +1,18 @@
+[
+  {
+    "id": "lever-201",
+    "text": "Business Systems Analyst",
+    "categories": {
+      "location": "Pittsburgh, Pennsylvania",
+      "team": "Internal Tools",
+      "commitment": "Full-time"
+    },
+    "descriptionPlain": "Research, testing, SQL, and process improvement.",
+    "additionalPlain": "Low direct customer contact.",
+    "hostedUrl": "https://example.com/lever/201",
+    "applyUrl": "https://example.com/lever/201/apply",
+    "createdAt": 1783684800000
+  },
+  {"id": "lever-bad", "text": "Missing URLs"}
+]
+
