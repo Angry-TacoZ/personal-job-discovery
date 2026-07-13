@@ -23,6 +23,8 @@
       <label>Source<select name="source"><option value="">All</option>{% for item in options.sources %}<option {% if filters.get('source') == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
       <label>Location<input name="location" value="{{ filters.get('location', '') }}" placeholder="Remote or Pennsylvania"></label>
       <label>Remote status<select name="remote_status"><option value="">All</option>{% for item in options.remote_statuses %}<option {% if filters.get('remote_status') == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
+      <label>Sort by<select name="sort_by"><option value="overall" {% if filters.get('sort_by', 'overall') == 'overall' %}selected{% endif %}>Overall match</option><option value="preference" {% if filters.get('sort_by') == 'preference' %}selected{% endif %}>Preference score</option><option value="resume" {% if filters.get('sort_by') == 'resume' %}selected{% endif %}>Resume score</option><option value="screen" {% if filters.get('sort_by') == 'screen' %}selected{% endif %}>Screen score</option></select></label>
+      <label>Order<select name="sort_direction"><option value="desc" {% if filters.get('sort_direction', 'desc') == 'desc' %}selected{% endif %}>Highest first</option><option value="asc" {% if filters.get('sort_direction') == 'asc' %}selected{% endif %}>Lowest first</option></select></label>
       <label class="check"><input name="new_only" type="checkbox" value="true" {% if filters.get('new_only') %}checked{% endif %}> New only</label>
       <div class="filter-actions"><button type="submit">Apply filters</button><a href="/">Clear</a></div>
     </form>

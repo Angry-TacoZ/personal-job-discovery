@@ -109,7 +109,7 @@ cd C:\path\to\personal-job-discovery
 .\.venv\Scripts\python.exe -m job_discovery --config config/companies.yml serve
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000). The dashboard provides new and score-ranked jobs, company/source/remote/location/title/score filters, source health, match explanations, direct apply links, and reviewed/ignored actions.
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000). The dashboard provides new and score-ranked jobs, company/source/remote/location/title/score filters, ascending or descending sorting by overall/preference/resume/screen score, source health, match explanations, direct apply links, and reviewed/ignored actions.
 
 ## Scoring
 

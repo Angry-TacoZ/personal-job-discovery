@@ -15,6 +15,7 @@ from job_discovery.schemas import (
     CompanyConfig,
     FetchResult,
     NormalizedJob,
+    ScoreResult,
     ScoringConfig,
     SourcePlatform,
 )
@@ -117,3 +118,60 @@ async def test_all_malformed_response_preserves_active_jobs(tmp_path: Path, setu
 
     assert failed["status"] == "failed"
     assert repository.dashboard_jobs()[0].active is True
+
+
+def test_dashboard_sorts_each_score_component_in_both_directions(tmp_path: Path):
+    company = CompanyConfig(
+        company_name="Example",
+        ats_platform="greenhouse",
+        ats_identifier="example",
+    )
+    repository = Repository(create_session_factory(tmp_path / "jobs.db"))
+    repository.sync_companies([company])
+    run_id = repository.start_scan(1)
+    component_scores = {
+        "a": ScoreResult(
+            score=45,
+            preference_score=80,
+            resume_score=20,
+            screening_score=50,
+            match_reasons=[],
+            rejection_reasons=[],
+        ),
+        "b": ScoreResult(
+            score=60,
+            preference_score=10,
+            resume_score=90,
+            screening_score=40,
+            match_reasons=[],
+            rejection_reasons=[],
+        ),
+        "c": ScoreResult(score=30, match_reasons=[], rejection_reasons=[]),
+    }
+    repository.upsert_source_jobs(
+        company,
+        run_id,
+        [(make_job(job_id), score) for job_id, score in component_scores.items()],
+        [],
+    )
+
+    expected = {
+        ("preference", "asc"): ["b", "a", "c"],
+        ("preference", "desc"): ["a", "b", "c"],
+        ("resume", "asc"): ["a", "b", "c"],
+        ("resume", "desc"): ["b", "a", "c"],
+        ("screen", "asc"): ["b", "a", "c"],
+        ("screen", "desc"): ["a", "b", "c"],
+    }
+    for (sort_by, direction), job_ids in expected.items():
+        jobs = repository.dashboard_jobs(sort_by=sort_by, sort_direction=direction)
+        assert [job.external_job_id for job in jobs] == job_ids
+
+
+def test_dashboard_rejects_unknown_sort_values(tmp_path: Path):
+    repository = Repository(create_session_factory(tmp_path / "jobs.db"))
+
+    with pytest.raises(ValueError, match="sort field"):
+        repository.dashboard_jobs(sort_by="title")
+    with pytest.raises(ValueError, match="sort direction"):
+        repository.dashboard_jobs(sort_direction="sideways")

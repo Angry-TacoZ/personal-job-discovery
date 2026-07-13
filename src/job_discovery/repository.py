@@ -4,7 +4,7 @@ import hashlib
 import json
 from datetime import UTC, datetime
 
-from sqlalchemy import Select, desc, func, select
+from sqlalchemy import Select, asc, desc, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from job_discovery.database import AppState, CompanyRecord, JobRecord, ScanRun
@@ -202,8 +202,21 @@ class Repository:
         remote_status: str | None = None,
         minimum_score: int | None = None,
         new_only: bool = False,
+        sort_by: str = "overall",
+        sort_direction: str = "desc",
         limit: int = 250,
     ) -> list[JobRecord]:
+        sort_columns = {
+            "overall": JobRecord.match_score,
+            "preference": JobRecord.preference_score,
+            "resume": JobRecord.resume_score,
+            "screen": JobRecord.screening_score,
+        }
+        if sort_by not in sort_columns:
+            raise ValueError("invalid dashboard sort field")
+        if sort_direction not in {"asc", "desc"}:
+            raise ValueError("invalid dashboard sort direction")
+
         query: Select[tuple[JobRecord]] = select(JobRecord).where(JobRecord.active.is_(True))
         if company:
             query = query.where(JobRecord.company_name == company)
@@ -219,9 +232,14 @@ class Repository:
             query = query.where(JobRecord.match_score >= minimum_score)
         if new_only:
             query = query.where(JobRecord.review_status == "new")
-        query = query.order_by(desc(JobRecord.match_score), desc(JobRecord.first_seen_at)).limit(
-            min(limit, 500)
-        )
+        sort_column = sort_columns[sort_by]
+        direction = asc if sort_direction == "asc" else desc
+        query = query.order_by(
+            sort_column.is_(None),
+            direction(sort_column),
+            desc(JobRecord.match_score),
+            desc(JobRecord.first_seen_at),
+        ).limit(min(limit, 500))
         with self.session_factory() as session:
             return list(session.scalars(query))
 

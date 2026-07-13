@@ -94,6 +94,10 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
         remote_status: str | None = None,
         minimum_score: str | None = Query(default=None, max_length=4),
         new_only: bool = False,
+        sort_by: str = Query(
+            default="overall", pattern="^(overall|preference|resume|screen)$"
+        ),
+        sort_direction: str = Query(default="desc", pattern="^(asc|desc)$"),
     ) -> HTMLResponse:
         parsed_minimum_score = _parse_optional_score(minimum_score)
         current = store.app_config()
@@ -105,6 +109,8 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
             remote_status=remote_status,
             minimum_score=parsed_minimum_score,
             new_only=new_only,
+            sort_by=sort_by,
+            sort_direction=sort_direction,
         )
         return templates.TemplateResponse(
             request,

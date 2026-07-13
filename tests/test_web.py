@@ -59,6 +59,8 @@ scoring: {}
         remote_with_blank_score = client.get(
             "/?company=&title=&minimum_score=&source=&location=Remote&remote_status="
         )
+        sorted_dashboard = client.get("/?sort_by=resume&sort_direction=asc&location=Remote")
+        invalid_sort = client.get("/?sort_by=title&sort_direction=sideways")
         malformed_score = client.get("/?minimum_score=not-a-number")
         out_of_range_score = client.get("/?minimum_score=101")
         detail = client.get(f"/jobs/{job.id}")
@@ -93,6 +95,10 @@ scoring: {}
     assert "Operations Analyst" in dashboard.text
     assert remote_with_blank_score.status_code == 200
     assert "Operations Analyst" in remote_with_blank_score.text
+    assert sorted_dashboard.status_code == 200
+    assert '<option value="resume" selected>Resume score</option>' in sorted_dashboard.text
+    assert '<option value="asc" selected>Lowest first</option>' in sorted_dashboard.text
+    assert invalid_sort.status_code == 422
     assert malformed_score.status_code == 422
     assert out_of_range_score.status_code == 422
     assert "<script>" not in detail.text
