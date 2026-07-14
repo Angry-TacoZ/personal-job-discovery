@@ -96,6 +96,10 @@ scoring: {}
     assert remote_with_blank_score.status_code == 200
     assert "Operations Analyst" in remote_with_blank_score.text
     assert sorted_dashboard.status_code == 200
+    assert 'id="job-filters"' in sorted_dashboard.text
+    assert sorted_dashboard.text.count('form="job-filters"') == 2
+    assert sorted_dashboard.text.count("this.form.requestSubmit()") == 2
+    assert "styles.css?v=20260713-sort-layout" in sorted_dashboard.text
     assert '<option value="resume" selected>Resume score</option>' in sorted_dashboard.text
     assert '<option value="asc" selected>Lowest first</option>' in sorted_dashboard.text
     assert invalid_sort.status_code == 422

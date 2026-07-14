@@ -16,15 +16,13 @@
   </section>
 
   <section class="panel">
-    <form method="get" class="filters">
+    <form id="job-filters" method="get" class="filters">
       <label>Company<select name="company"><option value="">All</option>{% for item in options.companies %}<option {% if filters.get('company') == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
       <label>Title<input name="title" value="{{ filters.get('title', '') }}" placeholder="analyst, AI, operations"></label>
       <label>Minimum score<input name="minimum_score" type="number" min="-100" max="100" value="{{ filters.get('minimum_score', '') }}"></label>
       <label>Source<select name="source"><option value="">All</option>{% for item in options.sources %}<option {% if filters.get('source') == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
       <label>Location<input name="location" value="{{ filters.get('location', '') }}" placeholder="Remote or Pennsylvania"></label>
       <label>Remote status<select name="remote_status"><option value="">All</option>{% for item in options.remote_statuses %}<option {% if filters.get('remote_status') == item %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
-      <label>Sort by<select name="sort_by"><option value="overall" {% if filters.get('sort_by', 'overall') == 'overall' %}selected{% endif %}>Overall match</option><option value="preference" {% if filters.get('sort_by') == 'preference' %}selected{% endif %}>Preference score</option><option value="resume" {% if filters.get('sort_by') == 'resume' %}selected{% endif %}>Resume score</option><option value="screen" {% if filters.get('sort_by') == 'screen' %}selected{% endif %}>Screen score</option></select></label>
-      <label>Order<select name="sort_direction"><option value="desc" {% if filters.get('sort_direction', 'desc') == 'desc' %}selected{% endif %}>Highest first</option><option value="asc" {% if filters.get('sort_direction') == 'asc' %}selected{% endif %}>Lowest first</option></select></label>
       <label class="check"><input name="new_only" type="checkbox" value="true" {% if filters.get('new_only') %}checked{% endif %}> New only</label>
       <div class="filter-actions"><button type="submit">Apply filters</button><a href="/">Clear</a></div>
     </form>
@@ -33,7 +31,14 @@
   {% set errors = companies|selectattr('last_scan_error')|list %}
   {% if errors %}<section class="panel errors"><h2>Source errors</h2>{% for company in errors %}<p><strong>{{ company.company_name }}</strong>: {{ company.last_scan_error }}</p>{% endfor %}</section>{% endif %}
 
-  <section class="queue-heading"><h2>Active jobs</h2><span>{{ jobs|length }} shown</span></section>
+  <section class="queue-heading">
+    <h2>Active jobs</h2>
+    <div class="queue-tools">
+      <span class="queue-count">{{ jobs|length }} shown</span>
+      <label class="queue-sort">Sort by<select name="sort_by" form="job-filters" onchange="this.form.requestSubmit()"><option value="overall" {% if filters.get('sort_by', 'overall') == 'overall' %}selected{% endif %}>Overall match</option><option value="preference" {% if filters.get('sort_by') == 'preference' %}selected{% endif %}>Preference score</option><option value="resume" {% if filters.get('sort_by') == 'resume' %}selected{% endif %}>Resume score</option><option value="screen" {% if filters.get('sort_by') == 'screen' %}selected{% endif %}>Screen score</option></select></label>
+      <label class="queue-sort order-sort">Order<select name="sort_direction" form="job-filters" onchange="this.form.requestSubmit()"><option value="desc" {% if filters.get('sort_direction', 'desc') == 'desc' %}selected{% endif %}>Highest first</option><option value="asc" {% if filters.get('sort_direction') == 'asc' %}selected{% endif %}>Lowest first</option></select></label>
+    </div>
+  </section>
   <section class="job-list">
     {% for job in jobs %}
       <article class="job-card">
