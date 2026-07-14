@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Resume scoring · Personal Job Discovery{% endblock %}
+{% block title %}Skills scoring · Personal Job Discovery{% endblock %}
 {% block content %}
   {% include "_control_nav.html" %}
   <section class="workspace-heading compact">
-    <div><p class="eyebrow">Local evidence profile</p><h1>Resume-aware scoring</h1><p>{{ formula }}. This is an estimate, not the employer's private ATS configuration.</p></div>
+    <div><p class="eyebrow">Local evidence profile</p><h1>Skills and eligibility scoring</h1><p>{{ formula }}. This is an estimate, not the employer's private ATS configuration.</p></div>
     {% if profile %}<form method="post" action="/control/resume/rescore"><button class="primary" type="submit">Rescore saved jobs</button></form>{% endif %}
   </section>
   {% if profile %}
@@ -18,13 +18,13 @@
       {% for rule in profile.evidence_rules %}
         <div class="evidence-row"><strong>{{ rule.reason }}</strong><span>{{ rule.phrases|join(', ') }}</span><b>+{{ rule.weight }}</b></div>
       {% endfor %}
-      {% if profile.gap_rules %}<div class="ledger-heading gap-heading"><div><p class="eyebrow">Not stated in this resume</p><h2>Evidence gaps</h2></div><p>These reduce resume match only when their phrases appear in a posting. They do not claim you cannot do the work.</p></div>{% endif %}
+      {% if profile.gap_rules %}<div class="ledger-heading gap-heading"><div><p class="eyebrow">Not stated in this resume</p><h2>Evidence gaps</h2></div><p>These reduce skills match only when their phrases appear in a posting. They do not claim you cannot do the work.</p></div>{% endif %}
       {% for rule in profile.gap_rules %}
         <div class="evidence-row gap"><strong>{{ rule.reason }}</strong><span>{{ rule.phrases|join(', ') }}</span><b>{{ rule.weight }}</b></div>
       {% endfor %}
     </section>
     <p class="privacy-note"><strong>Privacy boundary:</strong> the raw PDF, phone number, and email are not stored in this project. Only this sanitized evidence profile is read locally.</p>
   {% else %}
-    <div class="empty"><h2>No local resume profile configured</h2><p>Preference scoring remains available, but resume evidence and screening readiness cannot be calculated.</p></div>
+    <div class="empty"><h2>No local resume profile configured</h2><p>Preference scoring remains available, but skills match and eligibility fit cannot be calculated.</p></div>
   {% endif %}
 {% endblock %}

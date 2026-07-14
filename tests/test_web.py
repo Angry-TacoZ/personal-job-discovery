@@ -66,6 +66,7 @@ scoring: {}
         detail = client.get(f"/jobs/{job.id}")
         control = client.get("/control")
         resume_page = client.get("/control/resume")
+        faq_page = client.get("/faq")
         update = client.post(
             f"/jobs/{job.id}/status?status=ignored", follow_redirects=False
         )
@@ -99,8 +100,8 @@ scoring: {}
     assert 'id="job-filters"' in sorted_dashboard.text
     assert sorted_dashboard.text.count('form="job-filters"') == 2
     assert sorted_dashboard.text.count("this.form.requestSubmit()") == 2
-    assert "styles.css?v=20260713-sort-layout" in sorted_dashboard.text
-    assert '<option value="resume" selected>Resume score</option>' in sorted_dashboard.text
+    assert "styles.css?v=20260713-scoring-faq" in sorted_dashboard.text
+    assert '<option value="resume" selected>Skills match</option>' in sorted_dashboard.text
     assert '<option value="asc" selected>Lowest first</option>' in sorted_dashboard.text
     assert invalid_sort.status_code == 422
     assert malformed_score.status_code == 422
@@ -114,6 +115,12 @@ scoring: {}
     assert " UTC" not in dashboard.text
     assert resume_page.status_code == 200
     assert "No local resume profile configured" in resume_page.text
+    assert faq_page.status_code == 200
+    assert "What the job scores mean" in faq_page.text
+    assert "Preference fit" in faq_page.text
+    assert "Skills match" in faq_page.text
+    assert "Eligibility fit" in faq_page.text
+    assert "private ATS" in faq_page.text
     assert update.status_code == 303
     assert rejected_origin.status_code == 403
     assert repository.get_job(job.id).review_status == "ignored"

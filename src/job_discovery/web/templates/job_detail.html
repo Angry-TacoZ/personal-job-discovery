@@ -7,7 +7,7 @@
       <div><p class="eyebrow">{{ job.company_name }} &middot; {{ job.source_platform }}</p><h1>{{ job.title }}</h1><p>{{ job.location }} &middot; {{ job.remote_status }}{% if job.employment_type %} &middot; {{ job.employment_type }}{% endif %}</p></div>
       <div class="detail-score"><span>Overall match</span><strong>{{ job.match_score }}</strong></div>
     </div>
-    {% if job.resume_score is not none %}<div class="detail-components" aria-label="Score breakdown"><div><span>Preference fit</span><strong>{{ job.preference_score }}</strong><small>25% of overall</small></div><div><span>Resume evidence</span><strong>{{ job.resume_score }}</strong><small>50% of overall</small></div><div><span>Screen readiness</span><strong>{{ job.screening_score }}</strong><small>25% of overall</small></div></div>{% endif %}
+    {% if job.resume_score is not none %}<div class="detail-components" aria-label="Score breakdown"><div><span>Preference fit</span><strong>{{ job.preference_score }}</strong><small>25% of overall</small></div><div><span>Skills match</span><strong>{{ job.resume_score }}</strong><small>50% of overall</small></div><div><span>Eligibility fit</span><strong>{{ job.screening_score }}</strong><small>25% of overall</small></div></div>{% endif %}
     <div class="actions">
       <a class="primary" href="{{ job.apply_url }}" rel="noopener noreferrer" target="_blank">Open application &rarr;</a>
       <form method="post" action="/jobs/{{ job.id }}/status?status=reviewed"><button>Mark reviewed</button></form>
@@ -15,8 +15,8 @@
     </div>
     <div class="reason-grid score-reasons">
       <section><h2>Preference fit</h2>{% for reason in job.match_reasons %}<p class="reason positive">{{ reason }}</p>{% endfor %}{% for reason in job.rejection_reasons %}<p class="reason negative">{{ reason }}</p>{% endfor %}{% if not job.match_reasons and not job.rejection_reasons %}<p>No preference rules matched.</p>{% endif %}</section>
-      <section><h2>Resume evidence</h2>{% for reason in job.resume_reasons %}<p class="reason positive">{{ reason }}</p>{% else %}<p>No documented evidence categories matched.</p>{% endfor %}{% for gap in job.resume_gaps %}<p class="reason negative">{{ gap }}</p>{% endfor %}</section>
-      <section><h2>Screen estimate</h2>{% for reason in job.screening_reasons %}<p class="screen-note">{{ reason }}</p>{% endfor %}{% for flag in job.screening_flags %}<p class="reason negative">{{ flag }}</p>{% endfor %}<p class="estimate-note">Estimated from visible posting language; verify requirements on the original application.</p></section>
+      <section><h2>Skills match</h2>{% for reason in job.resume_reasons %}<p class="reason positive">{{ reason }}</p>{% else %}<p>No documented skill categories matched.</p>{% endfor %}{% for gap in job.resume_gaps %}<p class="reason negative">{{ gap }}</p>{% endfor %}</section>
+      <section><h2>Eligibility fit</h2>{% for reason in job.screening_reasons %}<p class="screen-note">{{ reason }}</p>{% endfor %}{% for flag in job.screening_flags %}<p class="reason negative">{{ flag }}</p>{% endfor %}<p class="estimate-note">Estimated from visible posting language; verify requirements on the original application.</p></section>
     </div>
     <section><h2>Description</h2><div class="description">{{ job.description }}</div></section>
     <footer><a href="{{ job.source_url }}" rel="noopener noreferrer" target="_blank">View original listing &rarr;</a></footer>

@@ -12,7 +12,7 @@ The control center provides:
 
 - **Overview** — scan now, see queue counts, and open the review dashboard
 - **Companies** — add, edit, enable, disable, or remove monitored ATS boards
-- **Resume scoring** — inspect the sanitized evidence profile and rescore saved jobs
+- **Skills scoring** — inspect the sanitized evidence profile and rescore saved jobs
 - **Automation** — install or remove a Windows background scan schedule
 - **Settings** — change the alert threshold, timeout, and retry count
 - **Reports** — read or open the latest Markdown report
@@ -109,15 +109,15 @@ cd C:\path\to\personal-job-discovery
 .\.venv\Scripts\python.exe -m job_discovery --config config/companies.yml serve
 ```
 
-Open [http://127.0.0.1:8000](http://127.0.0.1:8000). The dashboard provides new and score-ranked jobs, company/source/remote/location/title/score filters, ascending or descending sorting by overall/preference/resume/screen score, source health, match explanations, direct apply links, and reviewed/ignored actions.
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000). The dashboard provides new and score-ranked jobs, company/source/remote/location/title/score filters, ascending or descending sorting by overall match, preference fit, skills match, or eligibility fit, source health, match explanations, direct apply links, and reviewed/ignored actions. The FAQ page explains each component and the limits of estimating a private ATS screen.
 
 ## Scoring
 
 The overall 0-100 score combines three visible components:
 
 - **25% preference fit** from the positive and negative rules in `config/companies.yml`
-- **50% resume evidence** from documented capabilities in the ignored local resume profile
-- **25% screening readiness** from visible experience, education, location, clearance, seniority, and sponsorship language
+- **50% skills match** from documented capabilities in the ignored local resume profile
+- **25% eligibility fit** from visible experience, education, location, clearance, seniority, and sponsorship language
 
 A rule contributes its weight once when any configured phrase appears in one of its selected fields. Every component and matched phrase is stored with the job so the result remains auditable. Explicit likely blockers cap the overall score at 49 rather than being hidden inside an otherwise strong match.
 

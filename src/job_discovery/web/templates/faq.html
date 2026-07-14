@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Scoring FAQ &middot; Personal Job Discovery{% endblock %}
+{% block content %}
+  <section class="workspace-heading compact faq-heading">
+    <div><p class="eyebrow">Scoring FAQ</p><h1>What the job scores mean</h1><p>The scores are transparent estimates based on the public job description and your sanitized local resume profile. They do not reveal an employer's private ATS rules.</p></div>
+  </section>
+
+  <section class="formula-panel" aria-label="Overall score formula">
+    <div><strong>25%</strong><span>Preference fit</span></div>
+    <div><strong>50%</strong><span>Skills match</span></div>
+    <div><strong>25%</strong><span>Eligibility fit</span></div>
+    <p>These components create the 0&ndash;100 overall match score. A likely eligibility blocker caps the overall score at 49.</p>
+  </section>
+
+  <section class="faq-score-grid">
+    <article><p class="eyebrow">Preference fit</p><h2>Is this the kind of job you want?</h2><p>Measures alignment with your chosen role types, work arrangements, industries, and preferred or avoided job characteristics. It reflects your priorities, not whether you meet the employer's requirements.</p></article>
+    <article><p class="eyebrow">Skills match</p><h2>Does your resume show relevant capabilities?</h2><p>Looks for documented skills and experience such as AI systems, Python, automation, enterprise support, healthcare operations, testing, and documentation. It also subtracts for specialized skills that are requested but not stated in the resume profile.</p></article>
+    <article><p class="eyebrow">Eligibility fit</p><h2>Are there visible screening barriers?</h2><p>Estimates compatibility with required years of experience, education, location, work authorization, security clearance, and seniority. This is the closest component to an ATS knockout-screen estimate.</p></article>
+  </section>
+
+  <section class="faq-list">
+    <article><h2>Why can Skills match be high while Eligibility fit is low?</h2><p>You may have the right technical capabilities while the posting also requires a degree, clearance, location, or experience level that is not documented in your profile.</p></article>
+    <article><h2>Why can Eligibility fit be high while Skills match is low?</h2><p>The posting may have no obvious eligibility barriers but use few phrases that match your documented capabilities. That means you may be allowed through the basic screen without being a strong skills match.</p></article>
+    <article><h2>Does this reproduce the employer's ATS score?</h2><p>No. Employers rarely publish their exact ATS configuration or knockout questions. This app uses only visible posting language and keeps every matched reason available for review.</p></article>
+    <article><h2>How should I use these scores?</h2><p>Use the overall score to prioritize, then inspect all three components. Verify important requirements on the original application before deciding whether to apply.</p></article>
+  </section>
+{% endblock %}

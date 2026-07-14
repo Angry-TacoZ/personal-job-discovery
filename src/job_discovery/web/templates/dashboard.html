@@ -35,7 +35,7 @@
     <h2>Active jobs</h2>
     <div class="queue-tools">
       <span class="queue-count">{{ jobs|length }} shown</span>
-      <label class="queue-sort">Sort by<select name="sort_by" form="job-filters" onchange="this.form.requestSubmit()"><option value="overall" {% if filters.get('sort_by', 'overall') == 'overall' %}selected{% endif %}>Overall match</option><option value="preference" {% if filters.get('sort_by') == 'preference' %}selected{% endif %}>Preference score</option><option value="resume" {% if filters.get('sort_by') == 'resume' %}selected{% endif %}>Resume score</option><option value="screen" {% if filters.get('sort_by') == 'screen' %}selected{% endif %}>Screen score</option></select></label>
+      <label class="queue-sort">Sort by<select name="sort_by" form="job-filters" onchange="this.form.requestSubmit()"><option value="overall" {% if filters.get('sort_by', 'overall') == 'overall' %}selected{% endif %}>Overall match</option><option value="preference" {% if filters.get('sort_by') == 'preference' %}selected{% endif %}>Preference fit</option><option value="resume" {% if filters.get('sort_by') == 'resume' %}selected{% endif %}>Skills match</option><option value="screen" {% if filters.get('sort_by') == 'screen' %}selected{% endif %}>Eligibility fit</option></select></label>
       <label class="queue-sort order-sort">Order<select name="sort_direction" form="job-filters" onchange="this.form.requestSubmit()"><option value="desc" {% if filters.get('sort_direction', 'desc') == 'desc' %}selected{% endif %}>Highest first</option><option value="asc" {% if filters.get('sort_direction') == 'asc' %}selected{% endif %}>Lowest first</option></select></label>
     </div>
   </section>
@@ -47,7 +47,7 @@
           <div class="meta"><span>{{ job.company_name }}</span><span>{{ job.source_platform }}</span><span>{{ job.remote_status }}</span><span class="review-{{ job.review_status }}">{{ job.review_status }}</span></div>
           <h3><a href="/jobs/{{ job.id }}">{{ job.title }}</a></h3>
           <p>{{ job.location }}{% if job.department %} &middot; {{ job.department }}{% endif %}</p>
-          {% if job.resume_score is not none %}<div class="score-components" aria-label="Score breakdown"><span>Preference <b>{{ job.preference_score }}</b></span><span>Resume <b>{{ job.resume_score }}</b></span><span>Screen <b>{{ job.screening_score }}</b></span></div>{% endif %}
+          {% if job.resume_score is not none %}<div class="score-components" aria-label="Score breakdown"><span>Preference <b>{{ job.preference_score }}</b></span><span>Skills <b>{{ job.resume_score }}</b></span><span>Eligibility <b>{{ job.screening_score }}</b></span></div>{% endif %}
           {% if job.resume_reasons %}<p class="reason">{{ job.resume_reasons[0] }}</p>{% elif job.match_reasons %}<p class="reason">{{ job.match_reasons[0] }}</p>{% endif %}
         </div>
         <a class="apply-link" href="{{ job.apply_url }}" rel="noopener noreferrer" target="_blank">Apply &rarr;</a>

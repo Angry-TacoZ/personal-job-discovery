@@ -132,6 +132,10 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
             raise HTTPException(status_code=404, detail="Job not found")
         return templates.TemplateResponse(request, "job_detail.html", {"job": job})
 
+    @app.get("/faq", response_class=HTMLResponse)
+    def faq(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(request, "faq.html")
+
     @app.post("/jobs/{job_id}/status")
     def update_status(
         request: Request,
@@ -283,7 +287,7 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
             "resume.html",
             {
                 "profile": profile,
-                "formula": "25% preference + 50% resume evidence + 25% screening readiness",
+                "formula": "25% preference fit + 50% skills match + 25% eligibility fit",
                 "message": message,
                 "error": error,
             },
