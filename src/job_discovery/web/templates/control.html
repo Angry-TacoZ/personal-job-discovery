@@ -26,6 +26,7 @@
           <div><dt>New</dt><dd>{{ latest_scan.new_jobs }}</dd></div>
           <div><dt>Refreshed</dt><dd>{{ latest_scan.updated_jobs }}</dd></div>
           <div><dt>Inactive</dt><dd>{{ latest_scan.inactive_jobs }}</dd></div>
+          <div><dt>Below cutoff</dt><dd>{{ latest_scan.pruned_jobs }}</dd></div>
           <div><dt>Errors</dt><dd>{{ latest_scan.error_count }}</dd></div>
         </dl>
       {% else %}<p>No scan has run yet.</p>{% endif %}

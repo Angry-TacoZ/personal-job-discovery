@@ -30,7 +30,7 @@ async def run_scan(
     run_id = repository.start_scan(len(enabled))
     errors: list[dict[str, str]] = []
     warnings: dict[str, list[str]] = {}
-    totals = {"succeeded": 0, "new": 0, "updated": 0, "inactive": 0}
+    totals = {"succeeded": 0, "new": 0, "updated": 0, "inactive": 0, "pruned": 0}
     resume_profile = load_resume_profile(config, project_root)
     repository.ensure_scores(config.scoring, resume_profile)
 
@@ -50,13 +50,18 @@ async def run_scan(
                     (job, score_job(job, config.scoring, resume_profile))
                     for job in result.jobs
                 ]
-                new, updated, inactive = repository.upsert_source_jobs(
-                    company, run_id, scored, result.warnings
+                new, updated, inactive, pruned = repository.upsert_source_jobs(
+                    company,
+                    run_id,
+                    scored,
+                    result.warnings,
+                    prune_below_score=config.prune_below_score,
                 )
                 totals["succeeded"] += 1
                 totals["new"] += new
                 totals["updated"] += updated
                 totals["inactive"] += inactive
+                totals["pruned"] += pruned
                 if result.warnings:
                     warnings[company.company_name] = result.warnings
             except Exception as exc:
@@ -72,6 +77,7 @@ async def run_scan(
         new_jobs=totals["new"],
         updated_jobs=totals["updated"],
         inactive_jobs=totals["inactive"],
+        pruned_jobs=totals["pruned"],
         errors=errors,
     )
     report_jobs = repository.jobs_for_report(run_id, config.score_alert_threshold)
@@ -91,6 +97,7 @@ async def run_scan(
         "new_jobs": totals["new"],
         "updated_jobs": totals["updated"],
         "inactive_jobs": totals["inactive"],
+        "pruned_jobs": totals["pruned"],
         "errors": errors,
         "warnings": warnings,
         "markdown_report": str(markdown_path),

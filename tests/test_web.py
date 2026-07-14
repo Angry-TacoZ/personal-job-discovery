@@ -125,7 +125,12 @@ scoring: {}
         )
         settings = client.post(
             "/control/settings",
-            data={"threshold": "33", "timeout": "15", "retries": "1"},
+            data={
+                "threshold": "33",
+                "prune_below_score": "40",
+                "timeout": "15",
+                "retries": "1",
+            },
             follow_redirects=False,
         )
         company_add = client.post(
@@ -184,6 +189,7 @@ scoring: {}
     assert repository.get_job(job.id).review_status == "ignored"
     assert settings.status_code == 303
     assert app.state.config_store.app_config().score_alert_threshold == 33
+    assert app.state.config_store.app_config().prune_below_score == 40
     assert company_add.status_code == 303
     assert [company.company_name for company in app.state.config_store.companies()] == [
         "Example",

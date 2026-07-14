@@ -33,6 +33,23 @@ def test_existing_database_gains_resume_score_columns(tmp_path: Path):
     assert score_columns <= migrated_columns
 
 
+def test_existing_database_gains_pruned_jobs_scan_count(tmp_path: Path):
+    database_path = tmp_path / "jobs.db"
+    first_factory = create_session_factory(database_path)
+    first_engine = database_engine(first_factory)
+    with first_engine.begin() as connection:
+        connection.execute(text("ALTER TABLE scan_runs DROP COLUMN pruned_jobs"))
+    first_engine.dispose()
+
+    migrated_factory = create_session_factory(database_path)
+    scan_columns = {
+        column["name"]
+        for column in inspect(database_engine(migrated_factory)).get_columns("scan_runs")
+    }
+
+    assert "pruned_jobs" in scan_columns
+
+
 def test_unchanged_scoring_signature_skips_repeat_rescore(tmp_path: Path, monkeypatch):
     repository = Repository(create_session_factory(tmp_path / "jobs.db"))
     scoring = ScoringConfig(

@@ -107,6 +107,7 @@ class AppConfig(BaseModel):
     request_timeout_seconds: float = Field(default=20, ge=1, le=60)
     request_retries: int = Field(default=2, ge=0, le=5)
     score_alert_threshold: int = Field(default=20, ge=-100, le=100)
+    prune_below_score: int | None = Field(default=None, ge=-100, le=100)
     resume_profile_path: str | None = Field(default=None, max_length=500)
     companies: list[CompanyConfig]
     scoring: ScoringConfig

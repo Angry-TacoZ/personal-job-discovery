@@ -179,6 +179,7 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
             return _redirect(
                 "/control",
                 f"Scan complete: {summary['new_jobs']} new jobs and "
+                f"{summary['pruned_jobs']} listings excluded below the cutoff; "
                 f"{len(summary['errors'])} source errors.",
                 error=summary["status"] == "failed",
             )
@@ -354,8 +355,16 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
             current, root = load_config(resolved_config_path)
             profile = load_resume_profile(current, root)
             count = repository.rescore_jobs(current.scoring, profile)
+            pruned = (
+                repository.prune_jobs_below(current.prune_below_score)
+                if current.prune_below_score is not None
+                else 0
+            )
             app.state.resume_profile = profile
-            return _redirect("/control/resume", f"Rescored {count} active jobs.")
+            return _redirect(
+                "/control/resume",
+                f"Rescored {count} active jobs and deleted {pruned} below the cutoff.",
+            )
         except Exception as exc:
             return _redirect("/control/resume", _friendly_error(exc), error=True)
 
@@ -373,12 +382,13 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
     def save_settings(
         request: Request,
         threshold: int = Form(ge=-100, le=100),
+        prune_below_score: int = Form(ge=-100, le=100),
         timeout: float = Form(ge=1, le=60),
         retries: int = Form(ge=0, le=5),
     ) -> RedirectResponse:
         _require_local_write(request)
         try:
-            store.save_settings(threshold, timeout, retries)
+            store.save_settings(threshold, prune_below_score, timeout, retries)
             return _redirect("/control/settings", "Settings saved.")
         except Exception as exc:
             return _redirect("/control/settings", _friendly_error(exc), error=True)

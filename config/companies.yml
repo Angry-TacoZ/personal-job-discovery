@@ -5,6 +5,7 @@ user_agent: PersonalJobDiscovery/0.1 (+local personal-use monitor)
 request_timeout_seconds: 20
 request_retries: 2
 score_alert_threshold: 65
+prune_below_score: 40
 resume_profile_path: config/resume-profile.local.yml
 
 companies:

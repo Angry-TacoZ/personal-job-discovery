@@ -38,6 +38,7 @@ class ScanRun(Base):
     new_jobs: Mapped[int] = mapped_column(Integer, default=0)
     updated_jobs: Mapped[int] = mapped_column(Integer, default=0)
     inactive_jobs: Mapped[int] = mapped_column(Integer, default=0)
+    pruned_jobs: Mapped[int] = mapped_column(Integer, default=0)
     error_count: Mapped[int] = mapped_column(Integer, default=0)
     summary: Mapped[dict] = mapped_column(JSON, default=dict)
 
@@ -130,6 +131,7 @@ def create_session_factory(database_path: Path) -> sessionmaker:
 
     Base.metadata.create_all(engine)
     _migrate_jobs_score_breakdown(engine)
+    _migrate_scan_pruned_jobs(engine)
     return sessionmaker(bind=engine, expire_on_commit=False)
 
 
@@ -152,3 +154,12 @@ def _migrate_jobs_score_breakdown(engine: Engine) -> None:
         for name, declaration in additions.items():
             if name not in existing:
                 connection.execute(text(f"ALTER TABLE jobs ADD COLUMN {name} {declaration}"))
+
+
+def _migrate_scan_pruned_jobs(engine: Engine) -> None:
+    existing = {column["name"] for column in inspect(engine).get_columns("scan_runs")}
+    if "pruned_jobs" not in existing:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE scan_runs ADD COLUMN pruned_jobs INTEGER NOT NULL DEFAULT 0")
+            )

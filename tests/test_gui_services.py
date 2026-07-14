@@ -51,7 +51,7 @@ def test_company_editor_preserves_scoring_and_settings(tmp_path: Path):
             notes="Added from GUI",
         )
     )
-    store.save_settings(threshold=30, timeout=15, retries=1)
+    store.save_settings(threshold=30, prune_below_score=40, timeout=15, retries=1)
 
     config = store.app_config()
     assert [company.company_name for company in config.companies] == [
@@ -59,6 +59,7 @@ def test_company_editor_preserves_scoring_and_settings(tmp_path: Path):
         "New Company",
     ]
     assert config.score_alert_threshold == 30
+    assert config.prune_below_score == 40
     assert config.request_timeout_seconds == 15
     assert config.scoring.positive_rules[0].reason == "Testing"
     saved = yaml.safe_load(config_path.read_text(encoding="utf-8"))
