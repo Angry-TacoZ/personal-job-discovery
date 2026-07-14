@@ -2,11 +2,19 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from job_discovery.schemas import CompanyConfig, NormalizedJob, ScoreResult
+from job_discovery.discovery import DiscoveryResult
+from job_discovery.schemas import (
+    CompanyConfig,
+    NormalizedJob,
+    ScoreResult,
+    SourcePlatform,
+)
 from job_discovery.web.app import create_app
 
 
-def test_dashboard_escapes_description_and_updates_review_status(tmp_path: Path):
+def test_dashboard_escapes_description_and_updates_review_status(
+    tmp_path: Path, monkeypatch
+):
     config_dir = tmp_path / "config"
     config_dir.mkdir()
     config_path = config_dir / "companies.yml"
@@ -53,6 +61,25 @@ scoring: {}
     )
     job = repository.dashboard_jobs()[0]
 
+    async def fake_discovery(company_name, *_args, **_kwargs):
+        if company_name == "Existing Example":
+            return DiscoveryResult(
+                platform=SourcePlatform.GREENHOUSE,
+                identifier="example",
+                job_count=1,
+                careers_url="https://example.com/careers",
+            )
+        return DiscoveryResult(
+            platform=SourcePlatform.LEVER,
+            identifier="detected-example",
+            job_count=12,
+            careers_url="https://detected.example/careers",
+        )
+
+    monkeypatch.setattr(
+        "job_discovery.web.app.discover_company_source", fake_discovery
+    )
+
     with TestClient(app) as client:
         health = client.get("/health")
         dashboard = client.get("/?minimum_score=20&new_only=true")
@@ -67,6 +94,28 @@ scoring: {}
         control = client.get("/control")
         resume_page = client.get("/control/resume")
         faq_page = client.get("/faq")
+        discovery = client.post(
+            "/control/companies/discover",
+            data={
+                "company_name": "Detected Example",
+                "careers_url": "https://detected.example/careers",
+            },
+        )
+        existing_discovery = client.post(
+            "/control/companies/discover",
+            data={
+                "company_name": "Existing Example",
+                "careers_url": "https://example.com/careers",
+            },
+        )
+        rejected_discovery_origin = client.post(
+            "/control/companies/discover",
+            data={
+                "company_name": "Detected Example",
+                "careers_url": "https://detected.example/careers",
+            },
+            headers={"Origin": "https://untrusted.example"},
+        )
         update = client.post(
             f"/jobs/{job.id}/status?status=ignored", follow_redirects=False
         )
@@ -100,7 +149,7 @@ scoring: {}
     assert 'id="job-filters"' in sorted_dashboard.text
     assert sorted_dashboard.text.count('form="job-filters"') == 2
     assert sorted_dashboard.text.count("this.form.requestSubmit()") == 2
-    assert "styles.css?v=20260713-scoring-faq" in sorted_dashboard.text
+    assert "styles.css?v=20260713-company-discovery" in sorted_dashboard.text
     assert '<option value="resume" selected>Skills match</option>' in sorted_dashboard.text
     assert '<option value="asc" selected>Lowest first</option>' in sorted_dashboard.text
     assert invalid_sort.status_code == 422
@@ -121,6 +170,15 @@ scoring: {}
     assert "Skills match" in faq_page.text
     assert "Eligibility fit" in faq_page.text
     assert "private ATS" in faq_page.text
+    assert discovery.status_code == 200
+    assert "Ready to confirm" in discovery.text
+    assert "Detected <strong>Lever</strong>" in discovery.text
+    assert "12</strong> current jobs" in discovery.text
+    assert 'value="detected-example"' in discovery.text
+    assert "Already monitored" in existing_discovery.text
+    assert 'href="/control/companies?edit=0"' in existing_discovery.text
+    assert "Add and monitor" not in existing_discovery.text
+    assert rejected_discovery_origin.status_code == 403
     assert update.status_code == 303
     assert rejected_origin.status_code == 403
     assert repository.get_job(job.id).review_status == "ignored"

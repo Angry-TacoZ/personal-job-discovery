@@ -3,7 +3,33 @@
 {% block content %}
   {% include "_control_nav.html" %}
   <section class="workspace-heading compact">
-    <div><p class="eyebrow">Configuration</p><h1>Monitored companies</h1><p>Add public Greenhouse, Lever, or Ashby board identifiers.</p></div>
+    <div><p class="eyebrow">Configuration</p><h1>Monitored companies</h1><p>Paste a public careers page and let the app identify Greenhouse, Lever, or Ashby.</p></div>
+  </section>
+  <section class="discovery-panel">
+    <form class="discovery-form" method="post" action="/control/companies/discover">
+      <div><p class="eyebrow">Automatic setup</p><h2>Find the job-board platform</h2><p>Enter the company's own public careers page. Nothing is saved until you confirm the detected result.</p></div>
+      <label>Company name<input required maxlength="200" name="company_name" value="{{ discovery_name or '' }}" placeholder="Example Company"></label>
+      <label>Careers-page URL<input required maxlength="500" type="url" name="careers_url" value="{{ discovery_url or '' }}" placeholder="https://company.com/careers"></label>
+      <button class="primary" type="submit">Detect platform</button>
+    </form>
+    {% if discovery %}
+      <div class="discovery-result" role="status">
+        <div><p class="eyebrow">Ready to confirm</p><h2>{{ discovery_name }}</h2><p>Detected <strong>{{ discovery.platform.value|title }}</strong> board <code>{{ discovery.identifier }}</code> and validated <strong>{{ discovery.job_count }}</strong> current jobs.</p><small>{{ discovery.careers_url }}</small></div>
+        {% if already_monitored_index is not none %}
+          <div class="existing-discovery"><strong>Already monitored</strong><a class="button secondary" href="/control/companies?edit={{ already_monitored_index }}">Review company</a></div>
+        {% else %}
+          <form method="post" action="/control/companies/save">
+            <input type="hidden" name="company_name" value="{{ discovery_name }}">
+            <input type="hidden" name="ats_platform" value="{{ discovery.platform.value }}">
+            <input type="hidden" name="ats_identifier" value="{{ discovery.identifier }}">
+            <input type="hidden" name="notes" value="Automatically detected from the public careers page.">
+            <input type="hidden" name="enabled" value="on">
+            <input type="hidden" name="index" value="">
+            <button class="primary" type="submit">Add and monitor</button>
+          </form>
+        {% endif %}
+      </div>
+    {% endif %}
   </section>
   <section class="manager-layout">
     <div class="company-table">
@@ -18,7 +44,7 @@
       {% endfor %}
     </div>
     <form class="editor-form" method="post" action="/control/companies/save">
-      <h2>{% if selected %}Edit company{% else %}Add company{% endif %}</h2>
+      <h2>{% if selected %}Edit company{% else %}Add manually{% endif %}</h2>
       <input type="hidden" name="index" value="{% if selected_index is not none %}{{ selected_index }}{% endif %}">
       <label>Company name<input required maxlength="200" name="company_name" value="{{ selected.company_name if selected else '' }}"></label>
       <label>ATS platform<select name="ats_platform"><option value="greenhouse" {% if selected and selected.ats_platform.value == 'greenhouse' %}selected{% endif %}>Greenhouse</option><option value="lever" {% if selected and selected.ats_platform.value == 'lever' %}selected{% endif %}>Lever</option><option value="ashby" {% if selected and selected.ats_platform.value == 'ashby' %}selected{% endif %}>Ashby</option></select></label>

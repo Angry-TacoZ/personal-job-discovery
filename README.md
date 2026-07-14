@@ -17,6 +17,8 @@ The control center provides:
 - **Settings** — change the alert threshold, timeout, and retry count
 - **Reports** — read or open the latest Markdown report
 
+On the **Companies** page, enter a company name and its public careers-page URL to detect Greenhouse, Lever, or Ashby automatically. The app follows a bounded number of public redirects, extracts known ATS links, validates the provider's public job feed, and shows the detected identifier plus current job count before anything is saved. Local/private addresses, embedded credentials, nonstandard ports, and oversized pages are rejected. If detection is ambiguous or the company uses an unsupported ATS such as Workday, use the manual form or leave that company unconfigured.
+
 Python 3.12 or newer must be installed once on the computer. No PowerShell commands are required for normal use. The interface binds only to `127.0.0.1`, so it is available on this computer rather than the public internet.
 
 ## Architecture

@@ -11,6 +11,7 @@ from fastapi.templating import Jinja2Templates
 
 from job_discovery.config import load_config, load_resume_profile, resolve_project_path
 from job_discovery.database import create_session_factory
+from job_discovery.discovery import DiscoveryError, discover_company_source
 from job_discovery.gui_services import ALLOWED_INTERVALS, ConfigStore, TaskScheduler
 from job_discovery.repository import Repository
 from job_discovery.scan import run_scan
@@ -200,7 +201,60 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
                 "companies": companies,
                 "selected": selected,
                 "selected_index": edit if selected else None,
+                "discovery": None,
+                "discovery_name": "",
+                "discovery_url": "",
+                "already_monitored_index": None,
                 "message": message,
+                "error": error,
+            },
+        )
+
+    @app.post("/control/companies/discover", response_class=HTMLResponse)
+    async def discover_company(
+        request: Request,
+        company_name: str = Form(min_length=1, max_length=200),
+        careers_url: str = Form(min_length=8, max_length=500),
+    ) -> HTMLResponse:
+        _require_local_write(request)
+        current = store.app_config()
+        result = None
+        error = None
+        try:
+            result = await discover_company_source(
+                company_name,
+                careers_url,
+                timeout_seconds=current.request_timeout_seconds,
+                user_agent=current.user_agent,
+            )
+        except DiscoveryError as exc:
+            error = str(exc)
+        except Exception:
+            error = "Automatic detection could not complete. Try the direct careers URL."
+        companies = store.companies()
+        already_monitored_index = None
+        if result is not None:
+            already_monitored_index = next(
+                (
+                    index
+                    for index, company in enumerate(companies)
+                    if company.ats_platform == result.platform
+                    and company.ats_identifier == result.identifier
+                ),
+                None,
+            )
+        return templates.TemplateResponse(
+            request,
+            "companies.html",
+            {
+                "companies": companies,
+                "selected": None,
+                "selected_index": None,
+                "discovery": result,
+                "discovery_name": company_name.strip(),
+                "discovery_url": careers_url.strip(),
+                "already_monitored_index": already_monitored_index,
+                "message": None,
                 "error": error,
             },
         )
