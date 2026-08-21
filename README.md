@@ -150,9 +150,9 @@ Open **Automation** in the desktop app, choose a 3-, 6-, 12-, or 24-hour interva
 
 ### GitHub Actions
 
-`.github/workflows/scheduled-scan.yml` runs four times daily and can be started manually. It restores the newest matching Actions cache, scans, saves a new cache, and uploads the reports plus a database snapshot for 14 days.
+`.github/workflows/ci.yml` verifies pull requests and pushes to `main` with Ruff and pytest. `.github/workflows/scheduled-scan.yml` is available for a manual, ephemeral source scan when needed.
 
-Important limitation: GitHub-hosted runners are ephemeral. Actions cache is best-effort, immutable, evictable, and not a database backup. A cache miss makes existing listings appear new again. Concurrent scans are disabled, but state continuity is still weaker than Task Scheduler. Keep the repository private if the configuration, review state, or report is personal. Do not commit `data/jobs.db` to Git.
+Important limitation: GitHub-hosted runners are ephemeral, and the public repository intentionally does not cache or upload `data/jobs.db`, reports, or review state. Use Windows Task Scheduler for recurring personal scans because it keeps the database on this computer. Do not commit `data/jobs.db` or local reports to Git.
 
 ## Legal and operational boundaries
 
