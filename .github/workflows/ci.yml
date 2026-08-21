@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
@@ -35,4 +37,4 @@ jobs:
         run: python -m pytest
 
       - name: Check patch whitespace
-        run: git diff --check
+        run: git diff --check origin/main...HEAD
