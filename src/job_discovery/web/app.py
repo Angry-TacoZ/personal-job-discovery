@@ -383,12 +383,18 @@ def create_app(config_path: str | Path = "config/companies.yml") -> FastAPI:
         request: Request,
         threshold: int = Form(ge=-100, le=100),
         prune_below_score: int = Form(ge=-100, le=100),
+        pruning_enabled: bool = Form(False),
         timeout: float = Form(ge=1, le=60),
         retries: int = Form(ge=0, le=5),
     ) -> RedirectResponse:
         _require_local_write(request)
         try:
-            store.save_settings(threshold, prune_below_score, timeout, retries)
+            store.save_settings(
+                threshold,
+                prune_below_score if pruning_enabled else None,
+                timeout,
+                retries,
+            )
             return _redirect("/control/settings", "Settings saved.")
         except Exception as exc:
             return _redirect("/control/settings", _friendly_error(exc), error=True)

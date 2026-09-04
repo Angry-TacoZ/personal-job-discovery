@@ -128,6 +128,30 @@ scoring: {}
             data={
                 "threshold": "33",
                 "prune_below_score": "40",
+                "pruning_enabled": "true",
+                "timeout": "15",
+                "retries": "1",
+            },
+            follow_redirects=False,
+        )
+        enabled_config = app.state.config_store.app_config()
+        settings_disabled = client.post(
+            "/control/settings",
+            data={
+                "threshold": "33",
+                "prune_below_score": "40",
+                "timeout": "15",
+                "retries": "1",
+            },
+            follow_redirects=False,
+        )
+        disabled_config = app.state.config_store.app_config()
+        settings_reenabled = client.post(
+            "/control/settings",
+            data={
+                "threshold": "33",
+                "prune_below_score": "55",
+                "pruning_enabled": "true",
                 "timeout": "15",
                 "retries": "1",
             },
@@ -188,8 +212,12 @@ scoring: {}
     assert rejected_origin.status_code == 403
     assert repository.get_job(job.id).review_status == "ignored"
     assert settings.status_code == 303
-    assert app.state.config_store.app_config().score_alert_threshold == 33
-    assert app.state.config_store.app_config().prune_below_score == 40
+    assert enabled_config.score_alert_threshold == 33
+    assert enabled_config.prune_below_score == 40
+    assert settings_disabled.status_code == 303
+    assert disabled_config.prune_below_score is None
+    assert settings_reenabled.status_code == 303
+    assert app.state.config_store.app_config().prune_below_score == 55
     assert company_add.status_code == 303
     assert [company.company_name for company in app.state.config_store.companies()] == [
         "Example",

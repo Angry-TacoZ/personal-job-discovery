@@ -57,7 +57,7 @@ class ConfigStore:
         self._write_validated(raw)
 
     def save_settings(
-        self, threshold: int, prune_below_score: int, timeout: float, retries: int
+        self, threshold: int, prune_below_score: int | None, timeout: float, retries: int
     ) -> None:
         raw = self.read_raw()
         raw["score_alert_threshold"] = threshold
