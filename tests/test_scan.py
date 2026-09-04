@@ -120,6 +120,84 @@ async def test_all_malformed_response_preserves_active_jobs(tmp_path: Path, setu
     assert repository.dashboard_jobs()[0].active is True
 
 
+@pytest.mark.asyncio
+async def test_successful_scan_prunes_below_cutoff_and_keeps_boundary(
+    tmp_path: Path, setup, monkeypatch
+):
+    config, repository = setup
+    config.prune_below_score = 40
+    adapter = QueueAdapter(
+        [FetchResult(jobs=[make_job("low"), make_job("boundary"), make_job("high")])]
+    )
+    scores = {"low": 39, "boundary": 40, "high": 75}
+
+    def fixed_score(job, _scoring, _profile):
+        return ScoreResult(
+            score=scores[job.external_job_id], match_reasons=[], rejection_reasons=[]
+        )
+
+    monkeypatch.setattr("job_discovery.scan.score_job", fixed_score)
+
+    result = await run_scan(
+        config, tmp_path, repository, adapters={SourcePlatform.GREENHOUSE: adapter}
+    )
+
+    assert result["pruned_jobs"] == 1
+    assert result["new_jobs"] == 2
+    assert {job.external_job_id for job in repository.dashboard_jobs()} == {
+        "boundary",
+        "high",
+    }
+    assert repository.latest_scan().pruned_jobs == 1
+
+
+@pytest.mark.asyncio
+async def test_failed_scan_does_not_prune_existing_low_score(tmp_path: Path, setup):
+    config, repository = setup
+    company = config.companies[0]
+    repository.sync_companies([company])
+    run_id = repository.start_scan(1)
+    repository.upsert_source_jobs(
+        company,
+        run_id,
+        [(make_job("low"), ScoreResult(score=20, match_reasons=[], rejection_reasons=[]))],
+        [],
+    )
+    config.prune_below_score = 40
+
+    failed = await run_scan(
+        config,
+        tmp_path,
+        repository,
+        adapters={SourcePlatform.GREENHOUSE: QueueAdapter([RuntimeError("temporary failure")])},
+    )
+
+    assert failed["status"] == "failed"
+    assert failed["pruned_jobs"] == 0
+    assert [job.external_job_id for job in repository.dashboard_jobs()] == ["low"]
+
+
+def test_manual_prune_is_strictly_below_threshold(tmp_path: Path):
+    company = CompanyConfig(
+        company_name="Example", ats_platform="greenhouse", ats_identifier="example"
+    )
+    repository = Repository(create_session_factory(tmp_path / "jobs.db"))
+    repository.sync_companies([company])
+    run_id = repository.start_scan(1)
+    repository.upsert_source_jobs(
+        company,
+        run_id,
+        [
+            (make_job("low"), ScoreResult(score=39, match_reasons=[], rejection_reasons=[])),
+            (make_job("boundary"), ScoreResult(score=40, match_reasons=[], rejection_reasons=[])),
+        ],
+        [],
+    )
+
+    assert repository.prune_jobs_below(40) == 1
+    assert [job.external_job_id for job in repository.dashboard_jobs()] == ["boundary"]
+
+
 def test_dashboard_sorts_each_score_component_in_both_directions(tmp_path: Path):
     company = CompanyConfig(
         company_name="Example",

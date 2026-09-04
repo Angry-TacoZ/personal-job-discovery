@@ -56,9 +56,12 @@ class ConfigStore:
             raise ValueError("at least one company must remain in the configuration")
         self._write_validated(raw)
 
-    def save_settings(self, threshold: int, timeout: float, retries: int) -> None:
+    def save_settings(
+        self, threshold: int, prune_below_score: int | None, timeout: float, retries: int
+    ) -> None:
         raw = self.read_raw()
         raw["score_alert_threshold"] = threshold
+        raw["prune_below_score"] = prune_below_score
         raw["request_timeout_seconds"] = timeout
         raw["request_retries"] = retries
         self._write_validated(raw)

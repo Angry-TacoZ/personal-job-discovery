@@ -5,6 +5,8 @@
   <section class="workspace-heading compact"><div><p class="eyebrow">Preferences</p><h1>Scanner settings</h1><p>Adjust alert and network behavior without editing commands.</p></div></section>
   <form class="editor-form settings-form" method="post" action="/control/settings">
     <label>Alert score threshold<input type="number" name="threshold" min="0" max="100" value="{{ config.score_alert_threshold }}" required><small>Jobs at or above this 0-100 overall score appear in alert reports.</small></label>
+    <label><input type="checkbox" name="pruning_enabled" value="true" {% if config.prune_below_score is not none %}checked{% endif %}> Enable permanent low-score pruning</label>
+    <label>Deletion cutoff<input type="number" name="prune_below_score" min="-100" max="100" value="{{ config.prune_below_score if config.prune_below_score is not none else 40 }}" required><small>When pruning is enabled, a successful company scan permanently deletes jobs below this overall score. A job scoring exactly this value is kept. Turn off pruning to retain all listings.</small></label>
     <label>Request timeout (seconds)<input type="number" name="timeout" min="1" max="60" step="0.5" value="{{ config.request_timeout_seconds }}" required></label>
     <label>Retries per source<input type="number" name="retries" min="0" max="5" value="{{ config.request_retries }}" required></label>
     <div class="form-actions"><button class="primary" type="submit">Save settings</button></div>

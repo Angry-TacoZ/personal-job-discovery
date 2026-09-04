@@ -104,6 +104,8 @@ The command prints a JSON summary and updates:
 
 The report includes newly discovered jobs and all active jobs at or above `score_alert_threshold`.
 
+When `prune_below_score` is configured, a successful company scan permanently discards listings whose overall score is strictly below that cutoff. Listings at the cutoff are retained. Failed or malformed source responses never trigger pruning. The cutoff is editable from **Control Center → Settings**, and manually rescoring the resume also removes existing jobs below the configured cutoff.
+
 ## Launch the dashboard
 
 ```powershell

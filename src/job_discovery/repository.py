@@ -4,7 +4,7 @@ import hashlib
 import json
 from datetime import UTC, datetime
 
-from sqlalchemy import Select, asc, desc, func, select
+from sqlalchemy import Select, asc, delete, desc, func, select
 from sqlalchemy.orm import Session, sessionmaker
 
 from job_discovery.database import AppState, CompanyRecord, JobRecord, ScanRun
@@ -66,11 +66,13 @@ class Repository:
         run_id: int,
         jobs_with_scores: list[tuple[NormalizedJob, ScoreResult]],
         warnings: list[str],
-    ) -> tuple[int, int, int]:
+        prune_below_score: int | None = None,
+    ) -> tuple[int, int, int, int]:
         now = utc_now()
         new_count = 0
         updated_count = 0
         inactive_count = 0
+        pruned_count = 0
         seen_ids = {job.external_job_id for job, _score in jobs_with_scores}
 
         with self.session_factory.begin() as session:
@@ -91,6 +93,11 @@ class Repository:
                     )
                 )
                 content_hash = job.content_hash()
+                if prune_below_score is not None and score.score < prune_below_score:
+                    if record is not None:
+                        session.delete(record)
+                    pruned_count += 1
+                    continue
                 if record is None:
                     record = JobRecord(
                         first_seen_at=now,
@@ -129,6 +136,19 @@ class Repository:
                 record.content_hash = content_hash
                 self._apply_score(record, score)
 
+            if prune_below_score is not None:
+                session.flush()
+                stale_low_scores = select(JobRecord).where(
+                    JobRecord.source_platform == company.ats_platform.value,
+                    JobRecord.company_identifier == company.ats_identifier,
+                    JobRecord.match_score < prune_below_score,
+                )
+                for low_score in session.scalars(stale_low_scores):
+                    session.delete(low_score)
+                    pruned_count += 1
+
+            session.flush()
+
             active_query = select(JobRecord).where(
                 JobRecord.source_platform == company.ats_platform.value,
                 JobRecord.company_identifier == company.ats_identifier,
@@ -140,7 +160,7 @@ class Repository:
                 missing.active = False
                 inactive_count += 1
 
-        return new_count, updated_count, inactive_count
+        return new_count, updated_count, inactive_count, pruned_count
 
     def finish_scan(
         self,
@@ -150,6 +170,7 @@ class Repository:
         new_jobs: int,
         updated_jobs: int,
         inactive_jobs: int,
+        pruned_jobs: int,
         errors: list[dict[str, str]],
     ) -> None:
         with self.session_factory.begin() as session:
@@ -161,9 +182,10 @@ class Repository:
             run.new_jobs = new_jobs
             run.updated_jobs = updated_jobs
             run.inactive_jobs = inactive_jobs
+            run.pruned_jobs = pruned_jobs
             run.error_count = len(errors)
             run.status = "success" if not errors else ("partial" if succeeded else "failed")
-            run.summary = {"errors": errors}
+            run.summary = {"errors": errors, "pruned_jobs": pruned_jobs}
 
     def jobs_for_report(self, run_id: int, score_threshold: int) -> list[JobRecord]:
         with self.session_factory() as session:
@@ -287,6 +309,11 @@ class Repository:
             else:
                 state.value = signature
         return count
+
+    def prune_jobs_below(self, threshold: int) -> int:
+        with self.session_factory.begin() as session:
+            result = session.execute(delete(JobRecord).where(JobRecord.match_score < threshold))
+            return result.rowcount or 0
 
     def ensure_scores(
         self, scoring: ScoringConfig, resume_profile: ResumeProfile | None
